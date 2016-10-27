@@ -1,0 +1,11 @@
+eclipse.preferences.version=1
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.debug.1739297406/PATH/delimiter=;
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.debug.1739297406/PATH/operation=append
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.debug.1739297406/PATH/value=D\:\\compartidoRed\\PH2014\\PH2014\\EclipseARM\\sourcery-g++-lite-arm-2011.03\\bin
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.debug.1739297406/append=true
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.debug.1739297406/appendContributed=true
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.release.2139050493/PATH/delimiter=;
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.release.2139050493/PATH/operation=append
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.release.2139050493/PATH/value=D\:\\compartidoRed\\PH2014\\PH2014\\EclipseARM\\sourcery-g++-lite-arm-2011.03\\bin
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.release.2139050493/append=true
+environment/project/org.eclipse.cdt.cross.arm.gnu.sourcery.windows.elf.release.2139050493/appendContributed=true
