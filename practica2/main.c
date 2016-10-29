@@ -14,6 +14,7 @@
 #include "44b.h"
 #include "excepciones.h"
 #include <inttypes.h>
+#include "sudoku_2016.h"
 
 /*--- variables globales ---*/
 
@@ -70,10 +71,25 @@ void Main(void)
 	 *  ; store modified CPSR into SPSR
 	 *   ; context switch and branch
 	 */
+	/*
 	asm(
 			"ldr    R0,=0xffffffff\n\t"
 			"MOV   PC, r0"
 
 	);
+	*/
+	/*
+	// Otra alternativa seria pasar a cada uno de los modos...
+	// modo que se quiere EJEMPLO DE Undef, en 44binit.asm estan los diferentes nombres linea 420.
+	asm(
 
+			"mrs r0,cpsr\n\t"
+			"bic ro,r0, #0x1f\n\t"
+			"orr r1,r0, #0x1b"
+			"msr cpsr_cxsf.r1"
+			"ldr sp,=UndefStack"
+
+	);
+	*/
+	sudoku9x9(cuadricula,1);
 }

@@ -18,11 +18,11 @@ int instruccionCausante;
 
 /* declaración de función que es rutina de servicio de interrupción
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
-void excepciones_ISR(void) __attribute__((interrupt("RESET")));
 void excepciones_ISR(void) __attribute__((interrupt("ABORT")));
 void excepciones_ISR(void) __attribute__((interrupt("FIQ")));
 void excepciones_ISR(void) __attribute__((interrupt("UNDEF")));
 void excepciones_ISR(void) __attribute__((interrupt("SWI")));
+void excepciones_ISR(void) __attribute__((interrupt("IRQ")));
 
 void parpadear(int cod){
 
@@ -41,46 +41,40 @@ void excepciones_ISR(void)
 
 	// CALCULAR EL TIPO
 	asm volatile("mrs %0,CPSR" : "=r" (value));
-    int error2 = value & 0xf;
-    error=error2;
+    error = value & 0xf;
     //Calculo de la instruccion causante
     //R14 es la de retorno, r14 -4 es la causante
     uint32_t causante;
-    switch (error2) {
+    asm volatile("mov %0,r14" : "=r" (causante));
+    switch (error) {
 		case 7:
 			// ABORT
-			asm volatile("mov %0,r14" : "=r" (causante));
-
+			//causante = causante - 4; // for a prefetch abort
+			causante = causante - 8; // for a data abort
 			break;
 		case 1:
-			// int. rapdias
-			asm volatile("mov %0,r14" : "=r" (causante));
-
-		break;
+			// FIQ int. rapdias
+			causante = causante - 8;
+			break;
 		case 2:
 			// int. lentas
-			asm volatile("mov %0,r14" : "=r" (causante));
-
+			// IRQ
+			causante = causante -8;
 			break;
 		case 3:
-			//svc
-			asm volatile("mov %0,r14" : "=r" (causante));
-
+			//SWI Software interrupt
+			causante = causante -4;
 			break;
 		case 11:
-			// und
-			asm volatile("mov %0,r14" : "=r" (causante));
-
+			// Undefined intruction
+			causante = causante -4;
 			break;
 		default:
 			// desconocido
-
 			break;
 	}
-
-
     instruccionCausante = causante;
-    parpadear(error2);
+    parpadear(error);
 }
 
 /*
@@ -108,14 +102,14 @@ void excepciones_inicializar(){
 	/* Configuraion controlador de interrupciones */
 
     error = 0;
-	/* Establece la rutina de servicio para TIMER0 */
+
 
 	pISR_UNDEF = (unsigned) excepciones_ISR;
 	pISR_SWI = (unsigned) excepciones_ISR;
 	pISR_PABORT = (unsigned) excepciones_ISR;
 	pISR_DABORT = (unsigned) excepciones_ISR;
 	pISR_FIQ = (unsigned) excepciones_ISR;
-	//pISR_IRQ = (unsigned) excepciones_ISR;
+	pISR_IRQ = (unsigned) excepciones_ISR;
 
 
 
