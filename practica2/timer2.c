@@ -38,11 +38,7 @@ void timer2_ISR(void)
  * el temporizador se reinicia al valor inicial y seguirá contando.
  */
 void timer2_inicializar(){
-	/* Configuraion controlador de interrupciones */
 
-	rINTMOD = 0; // Configura la lina del timer 2 como de tipo IRQ
-	rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
-	rINTMSK = ~(BIT_GLOBAL | BIT_TIMER2); // Activo desenmarcaro el Timer2
 
 	/* Establece la rutina de servicio para TIMER0 */
 	pISR_TIMER2 = (unsigned) timer2_ISR;
@@ -54,6 +50,7 @@ void timer2_inicializar(){
 	rTCMPB2 = 0;// valor de comparación
 
 }
+
 
 /*
  * reinicia la cuenta de tiempo (contador y la variable), y comienza a medir.
@@ -81,7 +78,7 @@ int timer2_leer(){
 	 int ticks = 65535 - rTCNTO2 ;
 	 double ticksTotales= 65535 * timer2_num_int + ticks;
 
-	 double frecuenciaEfectiva = 65000000/((0+1)*2);
+	 double frecuenciaEfectiva = 66000000/((0+1)*2);
 	 return (ticksTotales *1000000)/frecuenciaEfectiva ;
 
 }

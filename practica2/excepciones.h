@@ -10,6 +10,7 @@
 
 /*--- variables visibles del módulo timer.c/timer.h ---*/
 
-int error;
-
+int error;  // 7 data abort,
+int instruccionCausante;
+void excepciones_inicializar();
 #endif /* _TIMER_H_ */
