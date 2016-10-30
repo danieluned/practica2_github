@@ -15,7 +15,7 @@
 #include "excepciones.h"
 #include <inttypes.h>
 #include "sudoku_2016.h"
-
+#include "pilaDepuracion.h"
 /*--- variables globales ---*/
 
 
@@ -91,5 +91,8 @@ void Main(void)
 
 	);
 	*/
-	sudoku9x9(cuadricula,1);
+	//sudoku9x9(cuadricula,1);
+
+	//Probar pila
+	probarPila();
 }
