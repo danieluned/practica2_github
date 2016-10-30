@@ -35,6 +35,7 @@ void Main(void)
 	excepciones_inicializar();
 	iniciar();
 	timer2_inicializar();
+	timer2_empezar();
 
 	//timer_init();	    // Inicializacion del temporizador NO SE USA
 	//Eint4567_init();	// inicializamos los pulsadores. Cada vez que se pulse se verá reflejado en el 8led
@@ -91,8 +92,8 @@ void Main(void)
 
 	);
 	*/
-	//sudoku9x9(cuadricula,1);
+	sudoku9x9(cuadricula,1);
 
 	//Probar pila
-	probarPila();
+	//probarPila();
 }

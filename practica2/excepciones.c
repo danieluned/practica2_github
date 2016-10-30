@@ -13,8 +13,8 @@
 #include "8led.h"
 
 //Variable global
-int error; //
-int instruccionCausante;
+uint32_t error; //
+uint32_t instruccionCausante;
 
 /* declaración de función que es rutina de servicio de interrupción
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
@@ -44,37 +44,44 @@ void excepciones_ISR(void)
     error = value & 0xf;
     //Calculo de la instruccion causante
     //R14 es la de retorno, r14 -4 es la causante
-    uint32_t causante;
-    asm volatile("mov %0,r14" : "=r" (causante));
+    uint32_t instruccion;
+    asm volatile("mov %0,r14" : "=r" (instruccion));
     switch (error) {
 		case 7:
 			// ABORT
 			//causante = causante - 4; // for a prefetch abort
-			causante = causante - 8; // for a data abort
+			instruccionCausante = instruccion - 8; // for a data abort
+			parpadear(error);
 			break;
 		case 1:
 			// FIQ int. rapdias
-			causante = causante - 8;
+			instruccionCausante = instruccion - 8;
+			parpadear(error);
 			break;
 		case 2:
 			// int. lentas
 			// IRQ
-			causante = causante -8;
+			instruccionCausante = instruccion -8;
+			parpadear(error);
 			break;
 		case 3:
 			//SWI Software interrupt
-			causante = causante -4;
+			instruccionCausante = instruccion -4;
+			parpadear(error);
 			break;
 		case 11:
 			// Undefined intruction
-			causante = causante -4;
+			instruccionCausante = instruccion -4;
+			parpadear(error);
 			break;
 		default:
 			// desconocido
+			instruccionCausante = instruccion -4;
+			parpadear(error);
 			break;
 	}
-    instruccionCausante = causante;
-    parpadear(error);
+
+
 }
 
 /*

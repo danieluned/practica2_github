@@ -82,5 +82,3 @@ int timer2_leer(){
 	 return (ticksTotales *1000000)/frecuenciaEfectiva ;
 
 }
-
-

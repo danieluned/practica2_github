@@ -313,67 +313,62 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
     //Version C
 
 
+    int i =0 ;
+    int inicio,fin;
 
-    int microsegundos=0;
-	int i =0 ;
-	timer2_empezar();
+
+    inicio = timer2_leer();
     while (i<10000){
     	sudoku_candidatos_init_c(cuadricula);
     	i++;
     }
-    microsegundos = timer2_leer()/10000;
+    fin = (timer2_leer()-inicio)/10000;
 
     //Version C y ARM
-    microsegundos=0;
+
     i = 0;
-    timer2_empezar();
+    inicio = timer2_leer();
 	while (i<10000){
 		sudoku_candidatos_init_c_arm(cuadricula);
 		i++;
 	}
-	microsegundos = timer2_leer()/10000;
+    fin = (timer2_leer()-inicio)/10000;
 
 
 	 //Version C y THUMB
-	microsegundos=0;
-	i = 0;
-	timer2_empezar();
+    i = 0;
+    inicio = timer2_leer();
 	while (i<10000){
 		sudoku_candidatos_init_c_thumb(cuadricula);
 		i++;
 	}
-	 microsegundos = timer2_leer()/10000;
+	fin = (timer2_leer()-inicio)/10000;
 
 	 //Version ARM
-	microsegundos=0;
-	i = 0;
-	timer2_empezar();
+	 i = 0;
+	 inicio = timer2_leer();
 	while (i<10000){
 		sudoku_candidatos_init_arm(cuadricula);
 		i++;
 	}
-	 microsegundos = timer2_leer()/10000;
+	fin = (timer2_leer()-inicio)/10000;
 
 	 //Version ARM_C
-	microsegundos=0;
 	i = 0;
-	timer2_empezar();
+	inicio = timer2_leer();
 	while (i<10000){
 		sudoku_candidatos_init_arm_c(cuadricula);
 		i++;
 	}
-	microsegundos = timer2_leer()/10000;
+	fin = (timer2_leer()-inicio)/10000;
 
 	 //Version ARM_THUMB
-	microsegundos=0;
-	i = 0;
-	timer2_empezar();
+    i = 0;
+    inicio = timer2_leer();
 	while (i<10000){
 		sudoku_candidatos_init_arm_thumb(cuadricula);
 		i++;
 	}
-	 i = 0;
-	 microsegundos = timer2_leer()/10000;
-	 microsegundos=0;
+	fin = (timer2_leer()-inicio)/10000;
 }
 

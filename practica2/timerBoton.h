@@ -5,12 +5,21 @@
 * Version:
 *********************************************************************************************/
 
-#ifndef _EXC_H
-#define _EXC_H
+#ifndef _TIMERBOTON_H_
+#define _TIMERBOTON_H_
 
-/*--- variables visibles del módulo timer.c/timer.h ---*/
 
-uint32_t error;  // 7 data abort,
-uint32_t instruccionCausante;
-void excepciones_inicializar();
+
+/*
+ * retardoInicial
+ */
+void retardo(int ms);
+
+/*
+ * monotorizarTemporizador
+ */
+void monitorizar();
+
+
+
 #endif /* _TIMER_H_ */
