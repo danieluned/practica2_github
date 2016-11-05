@@ -7,7 +7,7 @@
 
 #ifndef _EXC_H
 #define _EXC_H
-
+#include <inttypes.h>
 /*--- variables visibles del módulo timer.c/timer.h ---*/
 
 uint32_t error;  // 7 data abort,

@@ -9,6 +9,7 @@
 #include "timer2.h"
 #include "44b.h"
 #include "44blib.h"
+#include <inttypes.h>
 
 /*--- variables globales ---*/
 int timer2_num_int=0;
@@ -39,13 +40,16 @@ void timer2_ISR(void)
  */
 void timer2_inicializar(){
 
+	rINTMOD = 0x0; // Configura las linas como de tipo IRQ
+	rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
+	rINTMSK &= ~(BIT_GLOBAL | BIT_TIMER2); // Emascara todas las lineas excepto Timer2 y el bit global (bits 26 y 11, BIT_GLOBAL y BIT_TIMER2 están definidos en 44b.h)
 
 	/* Establece la rutina de servicio para TIMER0 */
 	pISR_TIMER2 = (unsigned) timer2_ISR;
 
 	/* Configura el Timer2 */
-	rTCFG0 = 0x0000 ; // ajusta el preescalado
-	rTCFG1 = 0x000; // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
+	rTCFG0 &= 0xffff00ff; // ajusta el preescalado, 255
+	rTCFG1 &= 0xfffff0ff; // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
 	rTCNTB2 = 65535;// valor inicial de cuenta (la cuenta es descendente)
 	rTCMPB2 = 0;// valor de comparación
 
@@ -60,27 +64,25 @@ void timer2_empezar(){
 
 	timer2_num_int =0;
 	/* establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)*/
-	rTCON = 0x2000;
-	/* iniciar timer2(bit 0) con auto-reload (bit 3)*/
-	rTCON = 0x9000;
+	rTCON = (rTCON & 0xffff0fff) | 0x2000 ;
+	rTCON = (rTCON & 0xffff0fff) | 0x9000;
 
 
 }
-
+//double frecuenciaEfectiva = 64000000/((0+1)*2) ;
 /*
  * lee la cuenta actual del temporizador y el número de interrupciones generadas, y
  * devuelve el tiempo transcurrido en microsegundos.
  */
-int timer2_leer(){
+double timer2_leer(){
 
 	// es de 64Mhz, quiere decir 64.000.000 de ciclos por segundo
 	//Ticks totales:
-	 int ticks = 65535 - rTCNTO2 ;
-	 double ticksTotales= 65535 * timer2_num_int + ticks;
 
-	 double frecuenciaEfectiva = 66000000/((0+1)*2);
-	 return (ticksTotales *1000000)/frecuenciaEfectiva ;
 
+	return timer2_num_int*(65535/32) + (65535-rTCNTO2)/32;
+	//return ( ( 65535 * timer2_num_int + ( 65535 - (rTCNTO2 %65535) ) ) / frecuenciaEfectiva )*1000000 ;
 }
+
 
 

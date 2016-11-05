@@ -18,7 +18,7 @@
   Cuando se pulsa un botón sumamos y con el otro restamos. ¡A veces hay rebotes! */
 static unsigned int int_count = 0;
 
-/* ESTADOS
+/* ESTADOS (Hay que actualizarlo con el diseño nuevo)
  * INICIAL, estado inicial, no se ha pulsado boton
  *
  * PULSADO se ha detectado una pulsacion
@@ -40,12 +40,12 @@ enum {
     esperandoPulsado       			= 2,
     esperandoRetardoFinal      		= 3,
     //TIEMPOS ms
-    TRP = 100,
-    TRD = 100,
+    TRP = 200, //placa 5
+    TRD = 130, //placa 5
     TI = 50
 
 };
-
+void temporizador(int ms);
 //Variables para controlar el automata
 int ESTADO = inicial;
 int interrupcionBoton = 0;
@@ -54,7 +54,7 @@ int tiempo = 0;
 int botonAntes = 0;
 int botonAhora = 0;
 int which_int;
-
+uint32_t estadoBoton;
 
 // Maquina de estados para la eliminación de los rebotes
 void maquinaEstados(){
@@ -63,7 +63,8 @@ void maquinaEstados(){
 						//Deshabilitar Irq de botones
 						rINTMSK    |= BIT_EINT4567;
 						//Llamar a temporizador con retardo inicial
-						temporizador(TRP);
+						push_debug(666,1);
+						timer0_reset();
 						//Siguiente estado
 						ESTADO = esperandoRetardoInicial;
 						interrupcionBoton = 0;
@@ -71,52 +72,56 @@ void maquinaEstados(){
 		break;
 	case esperandoRetardoInicial:
 					if (interrupcionTimer==1){
-						//Identificar boton
-						if (which_int==4){
-							//Pulsador eint6
-							botonAntes = rPDATG & 0x40 ;
-						}
-						if (which_int==8){
-							//Pulsador eint7
-							botonAntes = rPDATG & 0x80 ;
-						}
+						if (transcurrido >= TRP){
+							//temporizador de intervalo
+							push_debug(666,1); // Debug para validar que el timer 0
+							timer0_reset();
+							//Siguiente estado
+							ESTADO = esperandoPulsado;
 
-						//temporizador de intervalo
-						temporizador(TI);
-						//Siguiente estado
-						ESTADO = esperandoPulsado;
+						}
 						interrupcionTimer=0;
 					}
 		break;
 	case esperandoPulsado:
 					if (interrupcionTimer==1){
-						//boton ahora
-						if (which_int==4){
-							//Pulsador eint6
-							botonAhora = rPDATG & 0x40 ;
-						}
-						if (which_int==8){
-							//Pulsador eint7
-							botonAhora = rPDATG & 0x80 ;
-						}
-						if (botonAntes != botonAhora){
-							//Llamar a temporizador con retardo final
-							temporizador(TRD);
-							//Siguiente estado
-							ESTADO = esperandoRetardoFinal;
-						}else{
-							//Si no ha levantado el boton, volver a mirar dentro de un rato
-							temporizador(TI);
+						if (transcurrido >= TI){
+							//boton ahora
+							if (which_int==4){
+								//Pulsador eint6
+								estadoBoton = rPDATG & 0x40 ;
+							}
+							if (which_int==8){
+								//Pulsador eint7
+								estadoBoton = rPDATG & 0x80 ;
+							}
+							if (estadoBoton != 0){ // cero es cuando esta pulsado
+								//Llamar a temporizador con retardo final
+								push_debug(666,1);
+								timer0_reset();
+								//Siguiente estado
+								ESTADO = esperandoRetardoFinal;
+							}else{
+								//Si no ha levantado el boton, volver a mirar dentro de un rato
+								push_debug(666,1);
+								timer0_reset();
+							}
+
 						}
 						interrupcionTimer=0;
 					}
 		break;
 	case esperandoRetardoFinal:
 					if (interrupcionTimer==1){
-						//Habilitar IRQ
-						rINTMSK    &= BIT_EINT4567;
-						//Siguiente estado
-						ESTADO = inicial;
+						if (transcurrido >= TRD){
+							//Habilitar IRQ
+							rEXTINTPND = 0x0f;
+							rI_ISPC   |= BIT_EINT4567;
+							rINTMSK &= ~BIT_EINT4567;
+							//Siguiente estado
+							ESTADO = inicial;
+						}
+
 						interrupcionTimer=0;
 					}
 		break;
@@ -127,13 +132,18 @@ void maquinaEstados(){
 void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
 
 
+int interrupcion = 0;
 /*--- codigo de funciones ---*/
 void Eint4567_ISR(void)
 {
+    interrupcion +=1;
+	push_debug(interrupcion,rEXTINTPND);
+
 	interrupcionBoton = 1;
 	which_int = rEXTINTPND;
 	//Implementación del automataca
 	maquinaEstados();
+
 	rEXTINTPND = 0xf;				// borra los bits en EXTINTPND
 	rI_ISPC   |= BIT_EINT4567;		// borra el bit pendiente en INTPND
 
@@ -168,7 +178,7 @@ void Eint4567_init(void)
 	rEXTINTPND = 0xf;       // Borra EXTINTPND escribiendo 1s en el propio registro
 	rINTMOD    = 0x0;		// Configura las linas como de tipo IRQ
 	rINTCON    = 0x1;	    // Habilita int. vectorizadas y la linea IRQ (FIQ no)
-	rINTMSK    = ~(BIT_GLOBAL | BIT_EINT4567 | BIT_TIMER0); // Enmascara todas las lineas excepto eint4567, el bit global y el timer0
+	rINTMSK    &= ~(BIT_GLOBAL | BIT_EINT4567);
 
 	/* Establece la rutina de servicio para Eint4567 */
 	pISR_EINT4567 = (int) Eint4567_ISR;
@@ -192,8 +202,17 @@ int timer0_num_int=0;
 void timer0_ISR(void) __attribute__((interrupt("IRQ")));
 
 /*--- codigo de las funciones ---*/
+int transcurrido = 0;  // ms
+
+inline void timer0_reset(){
+	transcurrido = 0;
+}
+
 void timer0_ISR(void)
 {
+	transcurrido++;
+	push_debug(999,0);
+	interrupcionTimer=1;
 	maquinaEstados();
 	/* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
 	rI_ISPC |= BIT_TIMER0; // BIT_TIMER1 está definido en 44b.h y pone un uno en el bit que correponde al Timer2
@@ -212,71 +231,48 @@ void timer0_ISR(void)
  */
 void timer0_inicializar(){
 
-
+	/* Configuraion controlador de interrupciones */
+	rINTMOD=0x0; // Configura las linas como de tipo IRQ
+	rINTCON=0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
+	rINTMSK &= ~(BIT_GLOBAL |BIT_TIMER0);
 	/* Establece la rutina de servicio para TIMER0 */
 	pISR_TIMER0 = (unsigned) timer0_ISR;
 
-	/* Configura el Timer3 para avisar  */
-	rTCFG0 |= 0xCF ; // ajusta el preescalado 207
-	rTCFG1 |= 0x7; // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
-	rTCNTB0 = 65535;// valor inicial de cuenta (la cuenta es descendente)
+	/* Configura el Timer0 para avisar cada 1 ms */
+	rTCFG0 =(rTCFG0 & 0xffffff00) ; // ajusta el preescalado a 0
+	rTCFG1 =(rTCFG1 & 0xfffffff0) ; //divisor de 32
+	rTCNTB0 = 2000;// valor inicial de cuenta (la cuenta es descendente)
 	rTCMPB0 = 0;// valor de comparación
+	/* establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)*/
+	rTCON = (rTCON & 0xfffffff0) | 0x2 ;
+	/* iniciar timer (bit 0) con auto-reload (bit 3)*/
+	rTCON = (rTCON & 0xfffffff0) | 0x9;
 
 }
+
 
 /*
- * Mandara una interrupcion dentro de ms milisegundos.
- * valor permitido entre 1 y 5000 ms
- *
- */
+Calculos para obtener los 2000 de la cuenta
+F = MCLK / ((preescalado+1)(valordeldivisor))
 
-void temporizador(int ms){
-	//Ponemos pause al timer2
-
-	if (ms*10 > 65535){
-
-	}else{
-		rTCNTB0 = ms*10;// valor inicial de cuenta (la cuenta es descendente)
-		/* establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)*/
-		rTCON = 0x2;
-		/* iniciar timer (bit 0) sin auto-reload (bit 3)*/
-		rTCON = 0x1;
-	}
-}
+		Ticks (c)/FrecuenciaEfectiva(c/s)=s
 
 
-/* CALCULOS PARA CONFIGURAR LOS TICKS
-
-	frecuenciaEfectiva = 1000;
-
-	66000000 /((preescalado+1)*divisor) = 1000
-
-	66000 = (preescalado+1) * divisor
-
-	66000 / divisor  - 1 = preescalado
-
-	divisor {2,4,8,16,32}
-	preescalado {8bits}  0 hasta 255
-
-	PARa Cualquier divisor = 2
-		NO HAY SOLoCUoN
-	////
-	si ponemos que los ticks sean 10 vecos de los ms = (ticks*10) * 1000
-
-	frecuenciaEfectiva = 10000;
-
-	66000000 /((preescalado+1)*divisor) = 10000
-
-	6600 = (preescalado+1) * divisor
-
-	6600 / divisor  - 1 = preescalado
-
-	divisor {2,4,8,16,32}
-	preescalado {8bits}  0 hasta 255
-
-	si  divisor = 32
-		preescalado = 207
-	ticks = ms * 10;
-	maximo = 6553,5 ms
-
+			-----------
+			 ticks * (press+1) * div    == time
+			MLCK
+			___________
+			ticks * (pre+1) *div  * 1000 =  ms
+			64000000
+			___________
+			ticks * (pre+1)*div  = ms
+			64000
+			___________
+			x * 0+1 * div = ms
+			64000
+		   ____________
+		   x * div = ms
+		   64000
 */
+
+

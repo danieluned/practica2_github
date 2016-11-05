@@ -7,7 +7,7 @@
 
 #ifndef _TIMER2_H_
 #define _TIMER2_H_
-
+#include <inttypes.h>
 /*--- variables visibles del módulo timer.c/timer.h ---*/
 int timer2_num_int;
 int pruebaTimer2;
@@ -34,6 +34,6 @@ void timer2_empezar();
  * lee la cuenta actual del temporizador y el número de interrupciones generadas, y
  * devuelve el tiempo transcurrido en microsegundos.
  */
-int timer2_leer();
+double timer2_leer();
 
 #endif /* _TIMER_H_ */

@@ -1,5 +1,5 @@
 #include "sudoku_2016.h"
-
+#include "timer2.h"
 /* *****************************************************************************
  * Funciones privadas (static)
  * (no pueden ser invocadas desde otro fichero) */
@@ -294,6 +294,7 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
     //variable correcto = 0 es incorrecto , 1 correcto
     // SERA CORRECTA CADA VERSION CUANDO tiene el mismo contenido que la cuadricula copia
     // Y ADEMAS COINCIDE EN EL NUMERO DEVUELTO
+
     int vacias_c_arm = sudoku_candidatos_init_c_arm(cuadricula);
     int correcto_c_arm=  cuadricula_candidatos_verificar(cuadricula2,cuadricula);
 
@@ -314,61 +315,68 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
 
 
     int i =0 ;
-    int inicio,fin;
-
-
-    inicio = timer2_leer();
-    while (i<10000){
+    double fin;
+    int repe = 1000;
+    int vueltas = timer2_num_int;
+    double inicio = timer2_leer();
+    while (i<repe){
     	sudoku_candidatos_init_c(cuadricula);
     	i++;
     }
-    fin = (timer2_leer()-inicio)/10000;
+    fin = (timer2_leer()-inicio)/repe;
 
     //Version C y ARM
 
     i = 0;
-    inicio = timer2_leer();
-	while (i<10000){
+    int vueltas1 = timer2_num_int;
+    double inicio1 = timer2_leer();
+	while (i<repe){
 		sudoku_candidatos_init_c_arm(cuadricula);
 		i++;
 	}
-    fin = (timer2_leer()-inicio)/10000;
+	double fin1 = (timer2_leer()-inicio1)/repe;
 
 
 	 //Version C y THUMB
     i = 0;
-    inicio = timer2_leer();
-	while (i<10000){
+    int vueltas2 = timer2_num_int;
+    double inicio2 = timer2_leer();
+	while (i<repe){
 		sudoku_candidatos_init_c_thumb(cuadricula);
 		i++;
 	}
-	fin = (timer2_leer()-inicio)/10000;
+	double fin2  = (timer2_leer()-inicio2)/repe;
 
 	 //Version ARM
 	 i = 0;
-	 inicio = timer2_leer();
-	while (i<10000){
+	 int vueltas3 = timer2_num_int;
+	 double inicio3 = timer2_leer();
+	while (i<repe){
 		sudoku_candidatos_init_arm(cuadricula);
 		i++;
 	}
-	fin = (timer2_leer()-inicio)/10000;
+	double fin3 = (timer2_leer()-inicio3)/repe;
 
 	 //Version ARM_C
 	i = 0;
-	inicio = timer2_leer();
-	while (i<10000){
+	int vueltas4 = timer2_num_int;
+	double inicio4 = timer2_leer();
+	while (i<repe){
 		sudoku_candidatos_init_arm_c(cuadricula);
 		i++;
 	}
-	fin = (timer2_leer()-inicio)/10000;
+	double fin4 = (timer2_leer()-inicio4)/repe;
 
 	 //Version ARM_THUMB
     i = 0;
-    inicio = timer2_leer();
-	while (i<10000){
+    int vueltas5 = timer2_num_int;
+    double inicio5 = timer2_leer();
+	while (i<repe){
 		sudoku_candidatos_init_arm_thumb(cuadricula);
 		i++;
 	}
-	fin = (timer2_leer()-inicio)/10000;
+	double fin5 = (timer2_leer()-inicio5)/repe;
+	int vueltas6 = timer2_num_int;
+	double a = 0;
 }
 

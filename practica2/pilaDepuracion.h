@@ -7,5 +7,6 @@
 
 void push_debug(int ID_evento,int auxData);
 void probarPila();
+void limpiadoPila();
 #endif /* _TIMER_H_ */
 

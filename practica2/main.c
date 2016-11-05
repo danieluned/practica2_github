@@ -19,34 +19,32 @@
 /*--- variables globales ---*/
 
 
-void iniciar(){
-	/* PARA EL TIMER 2 */
-	rINTMOD = 0; // Configura la lina del timer 2 como de tipo IRQ
-	rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
-	rINTMSK = ~(BIT_GLOBAL | BIT_TIMER2); // Activo desenmarcaro el Timer2
-}
+
 /*--- codigo de funciones ---*/
 void Main(void)
 {
-
-
 	/* Inicializa controladores */
 	sys_init();         // Inicializacion de la placa, interrupciones y puertos
 	excepciones_inicializar();
-	iniciar();
-	timer2_inicializar();
-	timer2_empezar();
 
+	timer2_inicializar();  //TIMER 2 , para el tiempo global
+
+	timer0_inicializar();
 	//timer_init();	    // Inicializacion del temporizador NO SE USA
-	//Eint4567_init();	// inicializamos los pulsadores. Cada vez que se pulse se verá reflejado en el 8led
+	Eint4567_init();	// inicializamos los pulsadores. Cada vez que se pulse se verá reflejado en el 8led
 	D8Led_init();       // inicializamos el 8led
 
 
-
-
 	/* Valor inicial de los leds */
-	leds_off();
-	led1_on();
+		leds_off();
+		led1_on();
+
+		limpiadoPila();
+		//Iniciamos el tiempo del sistema.
+	timer2_empezar();
+
+
+
 
 
 
@@ -84,16 +82,37 @@ void Main(void)
 	// modo que se quiere EJEMPLO DE Undef, en 44binit.asm estan los diferentes nombres linea 420.
 	asm(
 
-			"mrs r0,cpsr\n\t"
-			"bic ro,r0, #0x1f\n\t"
-			"orr r1,r0, #0x1b"
-			"msr cpsr_cxsf.r1"
+			"mrs r0,cpsr"  			"\n\t"
+			"bic ro,r0, #0x1f"		"\n\t"
+			"orr r1,r0, #0x1b"		"\n\t"
+			"msr cpsr_cxsf.r1"		"\n\t"
 			"ldr sp,=UndefStack"
 
 	);
 	*/
-	sudoku9x9(cuadricula,1);
+	//sudoku9x9(cuadricula,1);
 
 	//Probar pila
 	//probarPila();
+
+
+
+	// Pruebas para el timer0
+	timer0_reset();
+	Delay(5000); //esta en decimas de milisegundo
+	push_debug(888,transcurrido); //transcurrido es en ms tendria que estas alrededor de 500
+
+	timer0_reset();
+	Delay(1300); //esta en decimas de milisegundo
+	push_debug(888,transcurrido); //transcurrido es en ms , transcurrido alrededor de 130
+
+	timer0_reset();
+	Delay(100); //esta en decimas de milisegundo
+	push_debug(888,transcurrido); //transcurrido es en ms , transcurrido alrededor de 10
+
+	//probando botones
+	while (1){
+		int a = 0;
+
+	}
 }

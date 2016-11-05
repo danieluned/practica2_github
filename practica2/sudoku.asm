@@ -1,10 +1,10 @@
 /*
- * init_b.asm
+ * sudoku.asm
  *
  *  Created on: 28/09/2016
  *      Author: daniel
  */
-
+.arm
 .text
 
 
@@ -588,13 +588,14 @@ sudoku_candidatos_propagar_arm:
 		//
 		// para saber de que region se trata ese que sobra, miramos la alineacion de la @ que hemos calcula en r0
 
-		//Miramos si la direccion esta alineada o no
-		ands r5,r0,#0b11	// Para saber si esta alineado o no, alineada=multiplo de 4
+
 
 		//Filtros para la mascara que esta en r10
 		ldr r7,=0xffff0000	// para dejar intacto la parte superior
 		ldr r8,=0xffff		// para dejar intacto la parte inferior
-		bne sinalinear // Saltamos si esta sin alinear
+		//Miramos si la direccion esta alineada o no
+		ands r5,r0,#0b11	// Para saber si esta alineado o no, alineada=multiplo de 4
+		bne sinalineare // Saltamos si esta sin alinear
 
 		//Para region alineada
 		ldmia r0,{r3,r4}
@@ -620,8 +621,9 @@ sudoku_candidatos_propagar_arm:
 		stmia r0,{r3,r4}
 		b continuar
 
-sinalinear:
+sinalineare:
 		//Para region sin alinear
+		sub r0,r0,#2
 		ldmia r0,{r3,r4}	//Se calcula con una direccion un
 		orr r6,r10,r8 // dejamos la mascara inferior
 		and r3,r3,r6
@@ -890,7 +892,7 @@ salto2_at:
 .thumb
 .thumb_func
 sudoku_candidatos_propagar_thumb:
-		push {r0,r1,r2,r3,r4,r5,r6,r7,lr}
+		push {r0,r1,r2,r3,r4,r5,r6,r7}
 
         # Poned el código aquí:
 		// En r0 esta la @cuadricula, en r1 fila , en r2 columna
@@ -1048,7 +1050,8 @@ sinalinear2:
 		//Para region sin alinear
 		////Uso de registros: r0=@direccion inicial de la region , r1=mascarasuperior
 		////				  r2=mascarainferior r3=mascaradoble, r4=copia de r0
-
+		sub r0,r0,#2
+		sub r4,r4,#2
 		ldmia r0,{r5,r6}
 		and r5,r2
 		and r6,r3
@@ -1076,7 +1079,8 @@ sinalinear2:
 continuar2:
         # restore the original registers
 
-    	 pop  {r0,r1,r2,r3,r4, r5, r6, r7, pc}
+    	 pop  {r0,r1,r2,r3,r4, r5, r6, r7}
+    	 bx r14
 
 ################################################################################
 .data

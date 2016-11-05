@@ -11,6 +11,7 @@
 #include "44blib.h"
 #include <inttypes.h>
 #include "8led.h"
+#include "pilaDepuracion.h"
 
 //Variable global
 uint32_t error; //
@@ -51,32 +52,38 @@ void excepciones_ISR(void)
 			// ABORT
 			//causante = causante - 4; // for a prefetch abort
 			instruccionCausante = instruccion - 8; // for a data abort
+			push_debug(error,instruccion);
 			parpadear(error);
 			break;
 		case 1:
 			// FIQ int. rapdias
 			instruccionCausante = instruccion - 8;
+			push_debug(error,instruccion);
 			parpadear(error);
 			break;
 		case 2:
 			// int. lentas
 			// IRQ
 			instruccionCausante = instruccion -8;
+			push_debug(error,instruccion);
 			parpadear(error);
 			break;
 		case 3:
 			//SWI Software interrupt
 			instruccionCausante = instruccion -4;
+			push_debug(error,instruccion);
 			parpadear(error);
 			break;
-		case 11:
+		case 6:
 			// Undefined intruction
 			instruccionCausante = instruccion -4;
+			push_debug(error,instruccion);
 			parpadear(error);
 			break;
 		default:
 			// desconocido
 			instruccionCausante = instruccion -4;
+			push_debug(error,instruccion);
 			parpadear(error);
 			break;
 	}

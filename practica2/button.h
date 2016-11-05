@@ -10,5 +10,5 @@
 
 /*--- declaracion de funciones visibles del módulo button.c/button.h ---*/
 void Eint4567_init(void);
-
+void timer0_inicializar(void);
 #endif /* _BUTTON_H_ */
