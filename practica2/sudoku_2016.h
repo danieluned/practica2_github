@@ -25,6 +25,7 @@ typedef uint16_t CELDA;
 /* declaracion de funciones visibles en el exterior */
 extern CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS];
 
+
 /* *****************************************************************************
  * programa principal del juego que recibe el tablero,
  * y la señal de ready que indica que se han actualizado fila y columna */

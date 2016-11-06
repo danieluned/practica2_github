@@ -1,4 +1,5 @@
 #include "8led.h"
+#include "sudoku_2016.h"
 
 int led[10]={
     ~0xED,
@@ -37,9 +38,40 @@ int valorConfirmado = -1;
 int BOTONIZQUIERDO = 4;
 int BOTONDERECHO = 8;
 // funciones que se necesitan
-void borrarValorEn(int fila,int columna);
-void introducirValorEn(int fila,int columna);
+/* *****************************************************************************
+ * modifica el valor almacenado en la celda indicada */
+static inline void
+celda_ponerValor(CELDA *celdaptr, uint8_t val)
+{
+    *celdaptr = (*celdaptr & 0xFFF0) | (val & 0x000F);
+}
 
+/* *****************************************************************************
+ * extrae el valor almacenado en los 16 bits de una celda */
+static inline uint8_t
+celda_leerValor(CELDA celda)
+{
+    return (celda & 0x000F);
+}
+
+void borrarValorEn(int fila,int columna){
+	celda_ponerValor(&cuadricula[fila][columna],0);
+	sudoku_candidatos_init_arm_thumb(cuadricula);
+}
+void introducirValorEn(int fila,int columna,int valor){
+	if (celda_leerValor(cuadricula[fila][columna]) != 0){
+		celda_ponerValor(&cuadricula[fila][columna],valor);
+		sudoku_candidatos_init_arm_thumb(cuadricula);
+	}else{
+		celda_ponerValor(&cuadricula[fila][columna],valor);
+		sudoku_candidatos_propagar_thumb(cuadricula,fila,columna);
+	}
+}
+
+int esPista(int fila,int columna){
+	return (cuadricula[fila][columna] & 0x8000) == 0x8000;
+
+}
 //MAQUINA DE ESTADOS
 void maquinaEstadosSudoku(){
 	switch (estado){
@@ -57,7 +89,7 @@ void maquinaEstadosSudoku(){
 			}
 		break;
 
-	}
+
 	case MOSTRAR_NUMEROS_1_9_F:
 			D8Led_symbol(led[numeroAmostrar]);
 			if (botonPulsado==BOTONIZQUIERDO){
@@ -136,18 +168,6 @@ void maquinaEstadosSudoku(){
 			estado = APARECER_F;
 		}
 	break;
-}
-// funciones que se necesitan
-void borrarValorEn(int fila,int columna){
-	celda_poner_valor(cuadricula[fila][columna],0);
-	sudoku_candidatos_init_thumb(cuadricula);
-}
-void introducirValorEn(int fila,int columna,int valor){
-	if (celda_leer_valor(cuadricula[fila][columna]) != 0){
-		celda_poner_valor(cuadricula[fila][columna],valor);
-		sudoku_candidatos_init_thumb(cuadricula);
-	}else{
-		celda_poner_valor(cuadricula[fila][columna],valor);
-		sudoku_candidatos_propagar_thumb(cuadricula);
 	}
 }
+

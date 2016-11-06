@@ -12,11 +12,9 @@
 #include "44b.h"
 #include "def.h"
 #include "pilaDepuracion.h"
+#include <inttypes.h>
 
 /*--- variables globales del módulo ---*/
-/* int_count la utilizamos para sacar un número por el 8led.
-  Cuando se pulsa un botón sumamos y con el otro restamos. ¡A veces hay rebotes! */
-static unsigned int int_count = 0;
 
 /* ESTADOS (Hay que actualizarlo con el diseño nuevo)
  * INICIAL, estado inicial, no se ha pulsado boton
@@ -45,7 +43,7 @@ enum {
     TI = 50
 
 };
-void temporizador(int ms);
+
 //Variables para controlar el automata
 int ESTADO = inicial;
 int interrupcionBoton = 0;
@@ -55,7 +53,12 @@ int botonAntes = 0;
 int botonAhora = 0;
 int which_int;
 uint32_t estadoBoton;
+/*--- codigo de las funciones ---*/
+int transcurrido = 0;  // ms
 
+ void  timer0_reset(){
+	transcurrido = 0;
+}
 // Maquina de estados para la eliminación de los rebotes
 void maquinaEstados(){
 	switch(ESTADO){
@@ -201,12 +204,7 @@ int timer0_num_int=0;
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
 void timer0_ISR(void) __attribute__((interrupt("IRQ")));
 
-/*--- codigo de las funciones ---*/
-int transcurrido = 0;  // ms
 
-inline void timer0_reset(){
-	transcurrido = 0;
-}
 
 void timer0_ISR(void)
 {
