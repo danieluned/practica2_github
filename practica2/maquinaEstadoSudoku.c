@@ -1,18 +1,6 @@
 #include "8led.h"
 #include "sudoku_2016.h"
 
-int led[10]={
-    ~0xED,
-    ~0x60,
-    ~0xCE,
-    ~0xEA,
-    ~0x63,
-    ~0xAB,
-    ~0x2F,
-    ~0xE0,
-    ~0xEF,
-    ~0xE3
-};
 
 enum {
 	//ESTADOS
@@ -28,7 +16,7 @@ enum {
 };
 
 // Variables y valores iniciales
-int botonPulsado = 0;
+volatile int  botonPulsado = 0;
 int estado = INICIO;
 int numeroAmostrar = 1;
 int filaConfirmada= -1;
@@ -43,7 +31,16 @@ int BOTONDERECHO = 8;
 static inline void
 celda_ponerValor(CELDA *celdaptr, uint8_t val)
 {
+
     *celdaptr = (*celdaptr & 0xFFF0) | (val & 0x000F);
+    uint16_t propa = 1<<(val+3);
+    if ( (*celdaptr & propa) != 0 ){
+    	//podia ser un candidato
+    	;
+    }else{
+    	//no podia ser ese valor un candidato, hay que poner el bit de error
+    	*celdaptr = (*celdaptr | 0x2000);
+    }
 }
 
 /* *****************************************************************************
@@ -54,11 +51,11 @@ celda_leerValor(CELDA celda)
     return (celda & 0x000F);
 }
 
-void borrarValorEn(int fila,int columna){
+void borrarValorEn(uint8_t fila,uint8_t columna){
 	celda_ponerValor(&cuadricula[fila][columna],0);
 	sudoku_candidatos_init_arm_thumb(cuadricula);
 }
-void introducirValorEn(int fila,int columna,int valor){
+void introducirValorEn(uint8_t fila,uint8_t columna,uint8_t valor){
 	if (celda_leerValor(cuadricula[fila][columna]) != 0){
 		celda_ponerValor(&cuadricula[fila][columna],valor);
 		sudoku_candidatos_init_arm_thumb(cuadricula);
@@ -69,105 +66,117 @@ void introducirValorEn(int fila,int columna,int valor){
 }
 
 int esPista(int fila,int columna){
-	return (cuadricula[fila][columna] & 0x8000) == 0x8000;
+
+	CELDA c = cuadricula[fila][columna];
+
+	uint16_t a = (c & 0x8000);
+
+	if( a == 0x8000 ){
+		return 0;
+	}else{
+		return 1;
+	}
 
 }
 //MAQUINA DE ESTADOS
 void maquinaEstadosSudoku(){
-	switch (estado){
-	case INICIO:
-			if (botonPulsado!=0){
-				botonPulsado = 0;
-				estado = APARECER_F;
-			}
-		break;
-	case APARECER_F:
-			D8Led_symbol(F);
-			if (botonPulsado==BOTONIZQUIERDO ){
-				botonPulsado = 0;
-				estado = MOSTRAR_NUMEROS_1_9_F;
-			}
-		break;
 
+	while(1){
+		switch (estado){
 
-	case MOSTRAR_NUMEROS_1_9_F:
-			D8Led_symbol(led[numeroAmostrar]);
-			if (botonPulsado==BOTONIZQUIERDO){
-				botonPulsado = 0;
-				numeroAmostrar ++;
-				if (numeroAmostrar >9){
-					numeroAmostrar=1;
+			case INICIO:
+					if (botonPulsado!=0){
+						botonPulsado = 0;
+						sudoku_candidatos_init_arm_thumb(cuadricula);
+						estado = APARECER_F;
+					}
+					break;
+			case APARECER_F:
+					D8Led_symbol(15);
+					if (botonPulsado==BOTONIZQUIERDO ){
+						botonPulsado = 0;
+						estado = MOSTRAR_NUMEROS_1_9_F;
+					}
+					break;
+			case MOSTRAR_NUMEROS_1_9_F:
+					D8Led_symbol(numeroAmostrar);
+					if (botonPulsado==BOTONIZQUIERDO){
+						botonPulsado = 0;
+						numeroAmostrar ++;
+						if (numeroAmostrar >9){
+							numeroAmostrar=1;
+						}
+
+					}
+					if (botonPulsado==BOTONDERECHO){
+						botonPulsado = 0;
+						filaConfirmada = numeroAmostrar -1;
+						numeroAmostrar = 1;
+						estado = APARECER_C;
+					}
+					break;
+			case APARECER_C:
+				D8Led_symbol(12);
+				if (botonPulsado==BOTONIZQUIERDO ){
+					botonPulsado = 0;
+					estado = MOSTRAR_NUMEROS_1_9_C;
 				}
+				break;
+			case MOSTRAR_NUMEROS_1_9_C:
+				D8Led_symbol(numeroAmostrar);
+				if (botonPulsado==BOTONIZQUIERDO){
+					botonPulsado = 0;
+					numeroAmostrar ++;
+					if (numeroAmostrar >9){
+						numeroAmostrar=1;
+					}
 
-			}
-			if (botonPulsado==BOTONDERECHO){
-				botonPulsado = 0;
-				filaConfirmada = numeroAmostrar;
-				numeroAmostrar = 1;
-				estado = APARECER_C;
-			}
-		break;
-	case APARECER_C:
-		D8Led_symbol(C);
-		if (botonPulsado==BOTONIZQUIERDO ){
-			botonPulsado = 0;
-			estado = MOSTRAR_NUMEROS_1_9_C;
-		}
-		break;
-	case MOSTRAR_NUMEROS_1_9_C:
-		D8Led_symbol(led[numeroAmostrar]);
-		if (botonPulsado==BOTONIZQUIERDO){
-			botonPulsado = 0;
-			numeroAmostrar ++;
-			if (numeroAmostrar >9){
-				numeroAmostrar=1;
-			}
+				}
+				if (botonPulsado==BOTONDERECHO){
+					botonPulsado = 0;
+					columnaConfirmada = numeroAmostrar - 1;
+					numeroAmostrar = 1;
+					if (esPista(filaConfirmada,columnaConfirmada)==0){
+						estado = APARECER_F;
+					}else{
+						estado = APARECER_V;
+					}
 
-		}
-		if (botonPulsado==BOTONDERECHO){
-			botonPulsado = 0;
-			columnaConfirmada = numeroAmostrar;
-			numeroAmostrar = 1;
-			if (esPista(filaConfirmada,columnaConfirmada)){
-				estado = APARECER_F;
-			}else{
-				estado = APARECER_V;
-			}
+				}
+				break;
+			case APARECER_V:
+				D8Led_symbol(10);
+				if (botonPulsado==BOTONIZQUIERDO ){
+					botonPulsado = 0;
+					estado = MOSTRAR_NUMEROS_0_9_V;
+				}
+				break;
+			case MOSTRAR_NUMEROS_0_9_V:
+				D8Led_symbol(numeroAmostrar);
+				if (botonPulsado==BOTONIZQUIERDO){
+					botonPulsado = 0;
+					numeroAmostrar ++;
+					if (numeroAmostrar >9){
+						numeroAmostrar=0;
+					}
 
-		}
-	break;
-	case APARECER_V:
-		D8Led_symbol(A);
-		if (botonPulsado==BOTONIZQUIERDO ){
-			botonPulsado = 0;
-			estado = MOSTRAR_NUMEROS_0_9_V;
-		}
-	break;
-	case MOSTRAR_NUMEROS_0_9_V:
-		D8Led_symbol(led[numeroAmostrar]);
-		if (botonPulsado==BOTONIZQUIERDO){
-			botonPulsado = 0;
-			numeroAmostrar ++;
-			if (numeroAmostrar >9){
-				numeroAmostrar=0;
-			}
+				}
+				if (botonPulsado==BOTONDERECHO){
+					botonPulsado = 0;
+					valorConfirmado = numeroAmostrar;
+					numeroAmostrar = 1;
 
+					if (valorConfirmado == 0){
+						//Borrado de esa celda
+						borrarValorEn(filaConfirmada,columnaConfirmada);
+					}else{
+						//Introducir ese valor
+						introducirValorEn(filaConfirmada,columnaConfirmada,valorConfirmado);
+					}
+					estado = APARECER_F;
+				}
+				break;
 		}
-		if (botonPulsado==BOTONDERECHO){
-			botonPulsado = 0;
-			valorConfirmado = numeroAmostrar;
-			numeroAmostrar = 1;
-
-			if (valorConfirmado == 0){
-				//Borrado de esa celda
-				borrarValorEn(filaConfirmada,columnaConfirmada);
-			}else{
-				//Introducir ese valor
-				introducirValorEn(filaConfirmada,columnaConfirmada,valorConfirmado);
-			}
-			estado = APARECER_F;
-		}
-	break;
 	}
 }
 

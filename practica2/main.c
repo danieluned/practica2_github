@@ -16,6 +16,7 @@
 #include <inttypes.h>
 #include "sudoku_2016.h"
 #include "pilaDepuracion.h"
+#include "maquinaEstadoSudoku.h"
 /*--- variables globales ---*/
 
 
@@ -36,11 +37,11 @@ void Main(void)
 
 
 	/* Valor inicial de los leds */
-		leds_off();
-		led1_on();
+	leds_off();
+	led1_on();
 
-		limpiadoPila();
-		//Iniciamos el tiempo del sistema.
+	limpiadoPila();
+	//Iniciamos el tiempo del sistema.
 	timer2_empezar();
 
 
@@ -96,7 +97,7 @@ void Main(void)
 	//probarPila();
 
 
-
+	/*
 	// Pruebas para el timer0
 	timer0_reset();
 	Delay(5000); //esta en decimas de milisegundo
@@ -109,10 +110,16 @@ void Main(void)
 	timer0_reset();
 	Delay(100); //esta en decimas de milisegundo
 	push_debug(888,transcurrido); //transcurrido es en ms , transcurrido alrededor de 10
-
+	*/
+	/*
 	//probando botones
 	while (1){
 		int a = 0;
 
 	}
+	*/
+
+	maquinaEstadosSudoku();
+
+
 }

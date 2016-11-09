@@ -13,7 +13,7 @@
 #include "def.h"
 #include "pilaDepuracion.h"
 #include <inttypes.h>
-
+#include "maquinaEstadoSudoku.h"
 /*--- variables globales del módulo ---*/
 
 /* ESTADOS (Hay que actualizarlo con el diseño nuevo)
@@ -38,8 +38,8 @@ enum {
     esperandoPulsado       			= 2,
     esperandoRetardoFinal      		= 3,
     //TIEMPOS ms
-    TRP = 200, //placa 5
-    TRD = 130, //placa 5
+    TRP = 130, //placa 5: 200, placa 13 130
+    TRD = 130, //placa 5: 130, placa 13 130
     TI = 50
 
 };
@@ -55,7 +55,16 @@ int which_int;
 uint32_t estadoBoton;
 /*--- codigo de las funciones ---*/
 int transcurrido = 0;  // ms
-
+void timer0_on(){
+	/* establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)*/
+	rTCON = (rTCON & 0xfffffff0) | 0x2 ;
+	/* iniciar timer (bit 0) con auto-reload (bit 3)*/
+	rTCON = (rTCON & 0xfffffff0) | 0x9;
+}
+void timer0_off(){
+	/* iniciar timer (bit 0) con auto-reload (bit 3)*/
+		rTCON = (rTCON & 0xfffffff0) | 0x0;
+}
  void  timer0_reset(){
 	transcurrido = 0;
 }
@@ -66,7 +75,8 @@ void maquinaEstados(){
 						//Deshabilitar Irq de botones
 						rINTMSK    |= BIT_EINT4567;
 						//Llamar a temporizador con retardo inicial
-						push_debug(666,1);
+						//push_debug(666,1);
+						timer0_on();
 						timer0_reset();
 						//Siguiente estado
 						ESTADO = esperandoRetardoInicial;
@@ -77,7 +87,7 @@ void maquinaEstados(){
 					if (interrupcionTimer==1){
 						if (transcurrido >= TRP){
 							//temporizador de intervalo
-							push_debug(666,1); // Debug para validar que el timer 0
+							//push_debug(666,1); // Debug para validar que el timer 0
 							timer0_reset();
 							//Siguiente estado
 							ESTADO = esperandoPulsado;
@@ -100,13 +110,13 @@ void maquinaEstados(){
 							}
 							if (estadoBoton != 0){ // cero es cuando esta pulsado
 								//Llamar a temporizador con retardo final
-								push_debug(666,1);
+								//push_debug(666,1);
 								timer0_reset();
 								//Siguiente estado
 								ESTADO = esperandoRetardoFinal;
 							}else{
 								//Si no ha levantado el boton, volver a mirar dentro de un rato
-								push_debug(666,1);
+								//push_debug(666,1);
 								timer0_reset();
 							}
 
@@ -121,6 +131,8 @@ void maquinaEstados(){
 							rEXTINTPND = 0x0f;
 							rI_ISPC   |= BIT_EINT4567;
 							rINTMSK &= ~BIT_EINT4567;
+							//y desactivamos timer
+							timer0_off();
 							//Siguiente estado
 							ESTADO = inicial;
 						}
@@ -144,35 +156,17 @@ void Eint4567_ISR(void)
 
 	interrupcionBoton = 1;
 	which_int = rEXTINTPND;
+
+
 	//Implementación del automataca
 	maquinaEstados();
 
 	rEXTINTPND = 0xf;				// borra los bits en EXTINTPND
 	rI_ISPC   |= BIT_EINT4567;		// borra el bit pendiente en INTPND
 
-	/*
-	Identificar la interrupcion (hay dos pulsadores)
-
-	int which_int = rEXTINTPND;
-	switch (which_int)
-	{
-		case 4:
-			int_count++; // incrementamos el contador
-			break;
-		case 8:
-			int_count--; // decrementamos el contador
-			break;
-		default:
-			break;
-	}
-
-	//D8Led_symbol(int_count & 0x000f); // sacamos el valor por pantalla (módulo 16)
-
-	// Finalizar ISR
-	rEXTINTPND = 0xf;				// borra los bits en EXTINTPND
-	rI_ISPC   |= BIT_EINT4567;		// borra el bit pendiente en INTPND
-
-	*/
+	// Asignar el boton pulsado a la variable que esta escuchando
+	// la maquina de sudoku
+	botonPulsado = which_int;
 }
 void Eint4567_init(void)
 {
@@ -209,7 +203,7 @@ void timer0_ISR(void) __attribute__((interrupt("IRQ")));
 void timer0_ISR(void)
 {
 	transcurrido++;
-	push_debug(999,0);
+	//push_debug(999,0);
 	interrupcionTimer=1;
 	maquinaEstados();
 	/* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
@@ -237,14 +231,11 @@ void timer0_inicializar(){
 	pISR_TIMER0 = (unsigned) timer0_ISR;
 
 	/* Configura el Timer0 para avisar cada 1 ms */
-	rTCFG0 =(rTCFG0 & 0xffffff00) ; // ajusta el preescalado a 0
-	rTCFG1 =(rTCFG1 & 0xfffffff0) ; //divisor de 32
+	rTCFG0 =(rTCFG0 & 0xffffff00)| 0x0 ; // ajusta el preescalado
+	rTCFG1 =(rTCFG1 & 0xfffffff0) |0x4 ; //divisor de 32
 	rTCNTB0 = 2000;// valor inicial de cuenta (la cuenta es descendente)
 	rTCMPB0 = 0;// valor de comparación
-	/* establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)*/
-	rTCON = (rTCON & 0xfffffff0) | 0x2 ;
-	/* iniciar timer (bit 0) con auto-reload (bit 3)*/
-	rTCON = (rTCON & 0xfffffff0) | 0x9;
+
 
 }
 
