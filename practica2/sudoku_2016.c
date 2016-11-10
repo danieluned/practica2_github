@@ -311,11 +311,10 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
     int correcto_arm_thumb=  cuadricula_candidatos_verificar(cuadricula2,cuadricula);
 
     /* Calculo de tiempos con la nueva funcion*/
+
     //Version C
-
-
     int i =0 ;
-    double fin;
+    double tmpC;
     int repe = 1000;
     int vueltas = timer2_num_int;
     double inicio = timer2_leer();
@@ -323,10 +322,10 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
     	sudoku_candidatos_init_c(cuadricula);
     	i++;
     }
-    fin = (timer2_leer()-inicio)/repe;
+    tmpC = (timer2_leer()-inicio)/repe;
+    push_debug(0,(int)tmpC);
 
     //Version C y ARM
-
     i = 0;
     int vueltas1 = timer2_num_int;
     double inicio1 = timer2_leer();
@@ -334,7 +333,8 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
 		sudoku_candidatos_init_c_arm(cuadricula);
 		i++;
 	}
-	double fin1 = (timer2_leer()-inicio1)/repe;
+	double tmpC_ARM = (timer2_leer()-inicio1)/repe;
+	push_debug(1,(int)tmpC_ARM);
 
 
 	 //Version C y THUMB
@@ -345,7 +345,8 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
 		sudoku_candidatos_init_c_thumb(cuadricula);
 		i++;
 	}
-	double fin2  = (timer2_leer()-inicio2)/repe;
+	double tmpC_thumb  = (timer2_leer()-inicio2)/repe;
+	push_debug(2,(int)tmpC_thumb);
 
 	 //Version ARM
 	 i = 0;
@@ -355,7 +356,8 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
 		sudoku_candidatos_init_arm(cuadricula);
 		i++;
 	}
-	double fin3 = (timer2_leer()-inicio3)/repe;
+	double tmpARM = (timer2_leer()-inicio3)/repe;
+	push_debug(3,(int)tmpARM);
 
 	 //Version ARM_C
 	i = 0;
@@ -365,7 +367,8 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
 		sudoku_candidatos_init_arm_c(cuadricula);
 		i++;
 	}
-	double fin4 = (timer2_leer()-inicio4)/repe;
+	double tmpARM_C = (timer2_leer()-inicio4)/repe;
+	push_debug(4,(int)tmpARM_C);
 
 	 //Version ARM_THUMB
     i = 0;
@@ -375,8 +378,10 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
 		sudoku_candidatos_init_arm_thumb(cuadricula);
 		i++;
 	}
-	double fin5 = (timer2_leer()-inicio5)/repe;
+	double tmpARM_thumb = (timer2_leer()-inicio5)/repe;
 	int vueltas6 = timer2_num_int;
+	push_debug(5,(int)tmpARM_thumb);
 	double a = 0;
+
 }
 

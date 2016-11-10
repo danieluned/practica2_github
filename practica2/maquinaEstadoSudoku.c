@@ -27,20 +27,23 @@ int BOTONIZQUIERDO = 4;
 int BOTONDERECHO = 8;
 // funciones que se necesitan
 /* *****************************************************************************
- * modifica el valor almacenado en la celda indicada */
-static inline void
+ * modifica el valor almacenado en la celda indicada, devuelve 0 si NO modifica bit error, 1 si SI que lo modifica */
+static inline int
 celda_ponerValor(CELDA *celdaptr, uint8_t val)
 {
 
-    *celdaptr = (*celdaptr & 0xFFF0) | (val & 0x000F);
+	//Quitamos bit de error siempre, si es necesario se activa a continuación
+    *celdaptr = (*celdaptr & 0xBFF0) | (val & 0x000F);
+
+
+    //Cálculo del bit de error
     uint16_t propa = 1<<(val+3);
-    if ( (*celdaptr & propa) != 0 ){
-    	//podia ser un candidato
-    	;
-    }else{
-    	//no podia ser ese valor un candidato, hay que poner el bit de error
-    	*celdaptr = (*celdaptr | 0x2000);
+    if ( (*celdaptr & propa) == 0 ){
+    	//no podia ser ese valor un candidato, hay que activar el bit de error
+    	*celdaptr = (*celdaptr | 0x4000);
+    	return 1; //Ha activado bit de error
     }
+    return 0;
 }
 
 /* *****************************************************************************
@@ -60,8 +63,11 @@ void introducirValorEn(uint8_t fila,uint8_t columna,uint8_t valor){
 		celda_ponerValor(&cuadricula[fila][columna],valor);
 		sudoku_candidatos_init_arm_thumb(cuadricula);
 	}else{
-		celda_ponerValor(&cuadricula[fila][columna],valor);
-		sudoku_candidatos_propagar_thumb(cuadricula,fila,columna);
+		int hayError = celda_ponerValor(&cuadricula[fila][columna],valor);
+		if(hayError==0) { //Si no ha habido error, propago
+			sudoku_candidatos_propagar_thumb(cuadricula,fila,columna);
+		}
+
 	}
 }
 

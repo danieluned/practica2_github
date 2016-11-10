@@ -48,7 +48,6 @@ void Main(void)
 
 
 
-
 	/*//EJEMPLO PARA PROBAR EL TIMER2
 	 * 	int tiempo=0;
 	while (1)
@@ -91,7 +90,9 @@ void Main(void)
 
 	);
 	*/
+	//int debug = 0;
 	//sudoku9x9(cuadricula,1);
+	//int debugfin =0;
 
 	//Probar pila
 	//probarPila();
@@ -120,6 +121,7 @@ void Main(void)
 	*/
 
 	maquinaEstadosSudoku();
+
 
 
 }

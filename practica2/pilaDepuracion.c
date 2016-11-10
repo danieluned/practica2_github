@@ -37,6 +37,7 @@ void push_debug(int ID_evento,int auxData){
 		actual= LIMITEINFERIOR;
 	}
 }
+
 void limpiadoPila(){
 	uint32_t i = LIMITEINFERIOR;
 	int cero = 0;
