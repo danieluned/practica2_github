@@ -10,7 +10,7 @@
 #include <inttypes.h>
 /*--- variables visibles del módulo timer.c/timer.h ---*/
 
-uint32_t error;  // 7 data abort,
-uint32_t instruccionCausante;
+volatile uint32_t error;  // 7 data abort,
+volatile uint32_t instruccionCausante;
 void excepciones_inicializar();
 #endif /* _TIMER_H_ */

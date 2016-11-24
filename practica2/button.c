@@ -45,16 +45,16 @@ enum {
 };
 
 //Variables para controlar el automata
-int ESTADO = inicial;
-int interrupcionBoton = 0;
-int interrupcionTimer = 0;
-int tiempo = 0;
-int botonAntes = 0;
-int botonAhora = 0;
-int which_int;
-uint32_t estadoBoton;
+volatile int ESTADO = inicial;
+volatile int interrupcionBoton = 0;
+volatile int interrupcionTimer = 0;
+volatile int tiempo = 0;
+volatile int botonAntes = 0;
+volatile int botonAhora = 0;
+volatile int which_int;
+volatile uint32_t estadoBoton;
 /*--- codigo de las funciones ---*/
-int transcurrido = 0;  // ms
+volatile int transcurrido = 0;  // ms
 void timer0_on(){
 	/* establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)*/
 	rTCON = (rTCON & 0xfffffff0) | 0x2 ;
@@ -69,6 +69,9 @@ void timer0_off(){
 	transcurrido = 0;
 }
 // Maquina de estados para la eliminación de los rebotes
+//para controlar pulsacion larga
+ int tiempoMantenido = TI;
+ int estadoPulsacionLarga = 1; // 1= TI, 2= 333ms, 3 = 250ms
 void maquinaEstados(){
 	switch(ESTADO){
 	case inicial: 	if (interrupcionBoton==1){
@@ -98,7 +101,8 @@ void maquinaEstados(){
 		break;
 	case esperandoPulsado:
 					if (interrupcionTimer==1){
-						if (transcurrido >= TI){
+
+						if (transcurrido >= tiempoMantenido){
 							//boton ahora
 							if (which_int==4){
 								//Pulsador eint6
@@ -114,10 +118,35 @@ void maquinaEstados(){
 								timer0_reset();
 								//Siguiente estado
 								ESTADO = esperandoRetardoFinal;
+								tiempoMantenido = TI;
+								estadoPulsacionLarga = 1; // 1= TI, 2= 333ms, 3 = 250ms
+								;
 							}else{
 								//Si no ha levantado el boton, volver a mirar dentro de un rato
 								//push_debug(666,1);
+
+								// boton ++
+								switch (estadoPulsacionLarga) {
+									case 1:
+											//Siguiente estado es 2
+										  tiempoMantenido = 333-TI;
+										 estadoPulsacionLarga = 2; // 1= TI, 2= 333ms, 3 = 250ms
+										break;
+									case 2:
+										//Siguiente estado es 2
+										  tiempoMantenido = 250;
+										 estadoPulsacionLarga = 3; // 1= TI, 2= 333ms, 3 = 250ms
+										 botonPulsado = which_int;
+										break;
+									case 3:
+										botonPulsado = which_int;
+										break;
+									default:
+										break;
+								}
+								//cambia el tiempo a mirar por 333
 								timer0_reset();
+
 							}
 
 						}
@@ -147,10 +176,29 @@ void maquinaEstados(){
 void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
 
 
-int interrupcion = 0;
+volatile int interrupcion = 0;
 /*--- codigo de funciones ---*/
 void Eint4567_ISR(void)
 {
+
+	//CPSR[7] = 0 /* habilitar interrupciones normales */
+	/*
+	//Carga CPSR, Habilita bit 7= Habilitar IRQ, Reemplaza CPSR actual por el modificado
+	asm(
+		"MRS r0, CPSR" "\n\t"
+		"AND r0,r0,#0xFFFFFF7F"	"\n\t"
+		"MSR CPSR ,r0 "
+
+	);
+
+	//Pueba de interrupcion del timer 0 mientras esta en el bucle
+	timer0_on();
+	timer0_reset();
+	while (1){
+		int b = 0;
+	}
+
+	 */
     interrupcion +=1;
 	push_debug(interrupcion,rEXTINTPND);
 

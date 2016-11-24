@@ -5,5 +5,5 @@
 
 void maquinaEstadosSudoku();
 volatile int botonPulsado;
-
+volatile int  permitirPulsacionLarga;
 #endif /* MAQUINA_H */

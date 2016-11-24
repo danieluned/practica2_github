@@ -12,8 +12,8 @@
 #include <inttypes.h>
 
 /*--- variables globales ---*/
-int timer2_num_int=0;
-int pruebaTimer2=0;
+volatile int timer2_num_int=0;
+volatile int pruebaTimer2=0;
 /* declaración de función que es rutina de servicio de interrupción
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
 void timer2_ISR(void) __attribute__((interrupt("IRQ")));
@@ -74,7 +74,7 @@ void timer2_empezar(){
  * lee la cuenta actual del temporizador y el número de interrupciones generadas, y
  * devuelve el tiempo transcurrido en microsegundos.
  */
-double timer2_leer(){
+float timer2_leer(){
 
 	// es de 64Mhz, quiere decir 64.000.000 de ciclos por segundo
 	//Ticks totales:

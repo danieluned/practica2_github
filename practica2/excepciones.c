@@ -14,8 +14,8 @@
 #include "pilaDepuracion.h"
 
 //Variable global
-uint32_t error; //
-uint32_t instruccionCausante;
+volatile uint32_t error; //
+volatile uint32_t instruccionCausante;
 
 /* declaración de función que es rutina de servicio de interrupción
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */

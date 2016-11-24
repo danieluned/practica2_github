@@ -800,74 +800,97 @@ salto2_at:
 		// que en r1 este la fila y que en r2 este la columna
 
 
-		ANDS r2,r3,r8 			// Comprobamos si en r3 hay valor
+		ANDS r2,r3,r8 			// Comparacion para calcular vacios
 		addeq r9,r9,#0x1		// si no hay valor sumamos vacios +1
+		ANDs r2, r3,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si1
+		ANDS r2,r3,r8 			// Comprobamos si en r3 hay valor
 		movne r2, #0x0			// si hay valor, al llamar a la funcion la columna para propagar sera r2
-		ADR   r11, sudoku_candidatos_propagar_thumb+1
+		ADRL    r11, sudoku_candidatos_propagar_thumb+1 // Se usa ADRL ya que la distancia es demasiado grande para usar ADR
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
+si1:
 		LDR r11, =0xF0000
         ANDS r2,r3,r11
-		addeq r9,r9,#0x1
+        addeq r9,r9,#0x1
+		ANDs r2, r3,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si2
+		ANDS r2,r3,r11
 		movne r2, #0x1
-		ADR   r11, sudoku_candidatos_propagar_thumb+1
+		ADRL    r11, sudoku_candidatos_propagar_thumb+1 // Se usa ADRL ya que la distancia es demasiado grande para usar ADR
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
-
+si2:
         ANDS r2,r4,r8
 		addeq r9,r9,#0x1
+		ANDs r2, r4,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si3
+		 ANDS r2,r4,r8
 		movne r2, #0x2
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
+si3:
 		LDR r11, =0xF0000
         ANDS r2,r4,r11
 		addeq r9,r9,#0x1
+		ANDs r2, r4,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si4
+		 ANDS r2,r4,r11
 		movne r2, #0x3
 		ADR   r11, sudoku_candidatos_propagar_thumb+1
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
-
+si4:
         ANDS r2,r5,r8
 		addeq r9,r9,#0x1
+		ANDs r2, r5,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si5
+		 ANDS r2,r5,r8
 		movne r2, #0x4
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
+si5:
 		LDR r11, =0xF0000
         ANDS r2,r5,r11
 		addeq r9,r9,#0x1
+		ANDs r2, r5,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si6
+		ANDS r2,r5,r11
 		movne r2, #0x5
 		ADR   r11, sudoku_candidatos_propagar_thumb+1
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
-
+si6:
         ANDS r2,r6,r8
 		addeq r9,r9,#0x1
+		ANDs r2, r6,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si7
+		ANDS r2,r6,r8
 		movne r2, #0x6
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
+si7:
 		LDR r11, =0xF0000
         ANDS r2,r6,r11
 		addeq r9,r9,#0x1
+		ANDs r2, r6,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si8
+		ANDS r2,r6,r11
 		movne r2, #0x7
 		ADR   r11, sudoku_candidatos_propagar_thumb+1
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-
-
+si8:
         ANDS r2,r7,r8
 		addeq r9,r9,#0x1
+		ANDs r2, r7,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
+		bne si9
+		ANDS r2,r7,r8
 		movne r2, #0x8
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
 		//fin de la llamada a otra funcion
-
+si9:
 		ADD r1, r1, #0x1 //Incrementa fila
 		ADD r10,r10, #0b100000
 		CMP r1,#9 //Comprueba si es la última fila
@@ -880,14 +903,11 @@ salto2_at:
    		 ldmfd   sp!, {r3,r4, r5, r6, r7, r8, r9, sl, fp, lr}
    		 bx  lr
 ################################################################################
-
 .global sudoku_candidatos_propagar_thumb
-
 # THUMB
 # propaga el valor de una determinada celda
 # para actualizar las listas de candidatos
 # de las celdas en su su fila, columna y región 
-
 
 .thumb
 .thumb_func

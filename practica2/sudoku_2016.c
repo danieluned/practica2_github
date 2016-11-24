@@ -314,10 +314,10 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
 
     //Version C
     int i =0 ;
-    double tmpC;
+    float tmpC;
     int repe = 1000;
     int vueltas = timer2_num_int;
-    double inicio = timer2_leer();
+    float inicio = timer2_leer();
     while (i<repe){
     	sudoku_candidatos_init_c(cuadricula);
     	i++;
@@ -328,60 +328,60 @@ sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready)
     //Version C y ARM
     i = 0;
     int vueltas1 = timer2_num_int;
-    double inicio1 = timer2_leer();
+    float inicio1 = timer2_leer();
 	while (i<repe){
 		sudoku_candidatos_init_c_arm(cuadricula);
 		i++;
 	}
-	double tmpC_ARM = (timer2_leer()-inicio1)/repe;
+	float tmpC_ARM = (timer2_leer()-inicio1)/repe;
 	push_debug(1,(int)tmpC_ARM);
 
 
 	 //Version C y THUMB
     i = 0;
     int vueltas2 = timer2_num_int;
-    double inicio2 = timer2_leer();
+    float inicio2 = timer2_leer();
 	while (i<repe){
 		sudoku_candidatos_init_c_thumb(cuadricula);
 		i++;
 	}
-	double tmpC_thumb  = (timer2_leer()-inicio2)/repe;
+	float tmpC_thumb  = (timer2_leer()-inicio2)/repe;
 	push_debug(2,(int)tmpC_thumb);
 
 	 //Version ARM
 	 i = 0;
 	 int vueltas3 = timer2_num_int;
-	 double inicio3 = timer2_leer();
+	 float inicio3 = timer2_leer();
 	while (i<repe){
 		sudoku_candidatos_init_arm(cuadricula);
 		i++;
 	}
-	double tmpARM = (timer2_leer()-inicio3)/repe;
+	float tmpARM = (timer2_leer()-inicio3)/repe;
 	push_debug(3,(int)tmpARM);
 
 	 //Version ARM_C
 	i = 0;
 	int vueltas4 = timer2_num_int;
-	double inicio4 = timer2_leer();
+	float inicio4 = timer2_leer();
 	while (i<repe){
 		sudoku_candidatos_init_arm_c(cuadricula);
 		i++;
 	}
-	double tmpARM_C = (timer2_leer()-inicio4)/repe;
+	float tmpARM_C = (timer2_leer()-inicio4)/repe;
 	push_debug(4,(int)tmpARM_C);
 
 	 //Version ARM_THUMB
     i = 0;
     int vueltas5 = timer2_num_int;
-    double inicio5 = timer2_leer();
+    float inicio5 = timer2_leer();
 	while (i<repe){
 		sudoku_candidatos_init_arm_thumb(cuadricula);
 		i++;
 	}
-	double tmpARM_thumb = (timer2_leer()-inicio5)/repe;
+	float tmpARM_thumb = (timer2_leer()-inicio5)/repe;
 	int vueltas6 = timer2_num_int;
 	push_debug(5,(int)tmpARM_thumb);
-	double a = 0;
+	float a = 0;
 
 }
 

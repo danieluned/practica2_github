@@ -12,7 +12,7 @@
 void Eint4567_init(void);
 void timer0_inicializar(void);
 
-int transcurrido;  // ms
+volatile int transcurrido;  // ms
 
 void  timer0_reset();
 #endif /* _BUTTON_H_ */
