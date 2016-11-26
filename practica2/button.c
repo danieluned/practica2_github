@@ -16,21 +16,7 @@
 #include "maquinaEstadoSudoku.h"
 /*--- variables globales del módulo ---*/
 
-/* ESTADOS (Hay que actualizarlo con el diseño nuevo)
- * INICIAL, estado inicial, no se ha pulsado boton
- *
- * PULSADO se ha detectado una pulsacion
- * 		deshabilitar interrupciones de los botones
- * 		programar temporizador con retardo inicial
- *
- * RETINICIAL,
- * 		identificar boton pulsado
- * 		programar temporizador cada 10ms para ver si sigue pulsado
- * LEVANTADO, se ha levantado
- * 		introducir retardo final
- * HABILITAR,
- * 		habilitar la IRQ al boton
- */
+
 enum {
 	//ESTADOS
     inicial      					= 0,
@@ -53,8 +39,17 @@ volatile int botonAntes = 0;
 volatile int botonAhora = 0;
 volatile int which_int;
 volatile uint32_t estadoBoton;
+// Maquina de estados para la eliminación de los rebotes
+//para controlar pulsacion larga
+volatile int tiempoMantenido = TI;
+volatile int estadoPulsacionLarga = 1; // 1= TI, 2= 333ms, 3 = 250ms
 /*--- codigo de las funciones ---*/
 volatile int transcurrido = 0;  // ms
+/*******TIMER 0******************/
+/*--- variables globales ---*/
+volatile int timer0_num_int=0;
+volatile int interrupcion = 0;
+
 void timer0_on(){
 	/* establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)*/
 	rTCON = (rTCON & 0xfffffff0) | 0x2 ;
@@ -68,10 +63,8 @@ void timer0_off(){
  void  timer0_reset(){
 	transcurrido = 0;
 }
-// Maquina de estados para la eliminación de los rebotes
-//para controlar pulsacion larga
- int tiempoMantenido = TI;
- int estadoPulsacionLarga = 1; // 1= TI, 2= 333ms, 3 = 250ms
+
+
 void maquinaEstados(){
 	switch(ESTADO){
 	case inicial: 	if (interrupcionBoton==1){
@@ -176,7 +169,7 @@ void maquinaEstados(){
 void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
 
 
-volatile int interrupcion = 0;
+
 /*--- codigo de funciones ---*/
 void Eint4567_ISR(void)
 {
@@ -238,9 +231,7 @@ void Eint4567_init(void)
 	rEXTINTPND = 0xf;
 
 }
-/*******TIMER 0******************/
-/*--- variables globales ---*/
-int timer0_num_int=0;
+
 
 /* declaración de función que es rutina de servicio de interrupción
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
@@ -289,7 +280,7 @@ void timer0_inicializar(){
 
 
 /*
-Calculos para obtener los 2000 de la cuenta
+Calculos para obtener los 2000 de la cuenta en rTCNTB0
 F = MCLK / ((preescalado+1)(valordeldivisor))
 
 		Ticks (c)/FrecuenciaEfectiva(c/s)=s

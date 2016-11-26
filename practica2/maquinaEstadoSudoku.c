@@ -1,3 +1,9 @@
+/*********************************************************************************************
+* Fichero:		maquinaEstadoSudoku.c
+* Autor:
+* Descrip:		Automata y funciones auxiliares usadas para jugar al sudoku
+* Version:
+*********************************************************************************************/
 #include "8led.h"
 #include "sudoku_2016.h"
 

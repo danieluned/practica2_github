@@ -1,7 +1,7 @@
 /*********************************************************************************************
-* Fichero:		timer2.h
+* Fichero:		excepciones.c
 * Autor:
-* Descrip:		funciones de control del timer2 del s3c44b0x
+* Descrip:		funciones de control para las excepciones
 * Version:
 *********************************************************************************************/
 

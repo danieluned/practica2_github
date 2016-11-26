@@ -1,3 +1,10 @@
+/*********************************************************************************************
+* Fichero:		sudoku_2016.c
+* Autor:
+* Descrip:		Funciones criticas del sudoku para la version c y
+* 				pruebas de tiempos para las distintas versiones (sudoku9x9)
+* Version:
+*********************************************************************************************/
 /* guarda para evitar inclusiones múltiples ("include guard") */
 #ifndef SUDOKU_H_2016
 #define SUDOKU_H_2016

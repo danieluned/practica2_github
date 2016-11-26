@@ -1,9 +1,10 @@
-/*
- * sudoku.asm
- *
- *  Created on: 28/09/2016
- *      Author: daniel
- */
+/*********************************************************************************************
+* Fichero:		sudoku.asm
+* Autor:
+* Descrip:		Funciones criticas del sudoku para las version arm y thumb
+				y tableros iniciales para el juego del sudoku
+* Version:
+*********************************************************************************************/
 .arm
 .text
 
