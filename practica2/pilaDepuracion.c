@@ -38,7 +38,7 @@ void push_debug(int ID_evento,int auxData){
 
 		:: "r"(actual),"r"(ID_evento),"r"(auxData),"r"(time)
 	);
- // esquema comprobar antes
+
 	actual = actual + 0x10;
 	if ( (actual+0x10) > LIMITESUPERIOR ){
 		actual= LIMITEINFERIOR;
