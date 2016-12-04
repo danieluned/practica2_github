@@ -17,8 +17,8 @@
 #include "sudoku_2016.h"
 #include "pilaDepuracion.h"
 #include "maquinaEstadoSudoku.h"
+#include "lcd.h"
 /*--- variables globales ---*/
-
 
 
 /*--- codigo de funciones ---*/
@@ -47,20 +47,27 @@ void Main(void)
 
 
 
+	/*LCD*/
 
-	/*//EJEMPLO PARA PROBAR EL TIMER2
-	 * 	int tiempo=0;
+
+	Lcd_PantallaInicial();        /* inicializacion LCD y visualizacion texto y rectangulos     */
+	Lcd_Cuadricula();
+
+
+	//EJEMPLO PARA PROBAR EL TIMER2
+		/*
+		float tiempo=0;
 	while (1)
 	{
 
-		int decimaldemilisegundo = 100;
+		int decimaldemilisegundo = 1000;
 		tiempo=0;
 		timer2_empezar();
 		Delay(decimaldemilisegundo);
 		tiempo = timer2_leer();
-		tiempo /= 100;
+		//tiempo /= 100;
 	}
-	*/
+
 
 	//EJEMPLOS PARA PROBAR LAS EXCEPCIONES
 	/*

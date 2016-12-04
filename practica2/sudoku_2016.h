@@ -16,7 +16,7 @@
 enum {NUM_FILAS = 9, NUM_COLUMNAS = 16};
 
 /* Definiciones para valores muy utilizados */
-enum {FALSE = 0, TRUE = 1};
+//enum {FALSE = 0, TRUE = 1};
 
 typedef uint16_t CELDA;
 /* La información de cada celda está codificada en 16 bits

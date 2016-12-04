@@ -79,6 +79,7 @@ float timer2_leer(){
 	// es de 64Mhz, quiere decir 64.000.000 de ciclos por segundo
 	//Ticks totales:
 
+	//Mejor int ,
 
 	return timer2_num_int*(65535/32) + (65535-rTCNTO2)/32;
 	//return ( ( 65535 * timer2_num_int + ( 65535 - (rTCNTO2 %65535) ) ) / frecuenciaEfectiva )*1000000 ;

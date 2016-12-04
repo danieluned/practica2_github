@@ -1,11 +1,12 @@
 /*********************************************************************************************
 * Fichero:		maquinaEstadoSudoku.c
 * Autor:
-* Descrip:		Automata y funciones auxiliares usadas para jugar al sudoku
+* Descrip:		Automata del juego del sudoky y funciones auxiliares
 * Version:
 *********************************************************************************************/
 #include "8led.h"
 #include "sudoku_2016.h"
+#include "lcd.h"
 
 
 enum {
@@ -53,6 +54,7 @@ celda_ponerValor(CELDA *celdaptr, uint8_t val)
     }
     return 0;
 }
+
 
 /* *****************************************************************************
  * extrae el valor almacenado en los 16 bits de una celda */
@@ -115,6 +117,7 @@ void maquinaEstadosSudoku(){
 						botonPulsado = 0;
 						estado = MOSTRAR_NUMEROS_1_9_F;
 						permitirPulsacionLarga = 1;
+						Lcd_rellenarValoresTab(cuadricula);
 					}
 					break;
 			case MOSTRAR_NUMEROS_1_9_F: //Elección de fila
