@@ -14,6 +14,9 @@
 /*--- variables globales ---*/
 volatile int timer2_num_int=0;
 volatile int pruebaTimer2=0;
+extern int decimasSegundos;
+extern int dosdecimilisegundosCalculo;
+extern int pausaCalculo;
 /* declaración de función que es rutina de servicio de interrupción
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
 void timer2_ISR(void) __attribute__((interrupt("IRQ")));
@@ -22,7 +25,14 @@ void timer2_ISR(void) __attribute__((interrupt("IRQ")));
 void timer2_ISR(void)
 {
 	timer2_num_int = 1+timer2_num_int;
-
+	//50ticks son 1 decima de segundo
+	// 1 = 2 dmilimasegundo
+	if(timer2_num_int%50==0){
+		decimasSegundos++;
+	}
+	if(pausaCalculo!=0){
+		dosdecimilisegundosCalculo++;
+	}
 	/* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
 	rI_ISPC |= BIT_TIMER2; // BIT_TIMER2 está definido en 44b.h y pone un uno en el bit que correponde al Timer2
 }

@@ -13,4 +13,11 @@
 void maquinaEstadosSudoku();
 volatile int botonPulsado;
 volatile int  permitirPulsacionLarga;
+volatile int pausaCalculo;
+
+volatile int decimasSegundos ;
+volatile int segundos ;
+volatile int dosdecimilisegundosCalculo;
+volatile int segundosCalculo;
+
 #endif /* MAQUINA_H */
