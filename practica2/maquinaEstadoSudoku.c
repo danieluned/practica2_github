@@ -218,7 +218,7 @@ void maquinaEstadosSudoku(){
 				break;
 			case MOSTRAR_NUMEROS_1_9_C: //Elección de columna
 				D8Led_symbol(numeroAmostrar);
-				if (botonPulsado==BOTONIZQUIERDO){ //Aumenta número
+				if (botonPulsado==BOTONIZQUIERDO){ //Aumentar número
 					botonPulsado = 0;
 					numeroAmostrar ++;
 					if (numeroAmostrar >9){
