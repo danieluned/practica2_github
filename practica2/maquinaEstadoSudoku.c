@@ -208,7 +208,7 @@ void maquinaEstadosSudoku(){
 
 								}
 								break;
-			case APARECER_C: //Comienza introdución de columna, pulsar izq s
+			case APARECER_C: //Comienza introdución de columna, pulsar izq
 				D8Led_symbol(12);
 				if (botonPulsado==BOTONIZQUIERDO ){
 					botonPulsado = 0;
