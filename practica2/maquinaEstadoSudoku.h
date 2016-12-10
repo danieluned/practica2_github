@@ -19,5 +19,6 @@ volatile int decimasSegundos ;
 volatile int segundos ;
 volatile int dosdecimilisegundosCalculo;
 volatile int segundosCalculo;
-
+volatile int pintar;
+volatile int empezarTiempo;
 #endif /* MAQUINA_H */

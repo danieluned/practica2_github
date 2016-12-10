@@ -40,9 +40,10 @@ volatile int valorConfirmado = -1;
 //Touchpad
 volatile int touchPulsado = 0;
 volatile int modoZoom=0;
-extern unsigned int  Vx, Vy;
+volatile int  tX=0, tY=0;
 //Pintar LCD
-volatile int pintar = 0;
+volatile int pintar = 0;		//Indica si se ha de pintar de nuevo el tiempo
+volatile int pintarTodo = 0;
 volatile int estadoPintar = PINTAR_PRE;
 volatile int region=-1;
 //valor region pinchada
@@ -58,6 +59,7 @@ volatile int segundos = 0;
 volatile int dosdecimilisegundosCalculo = 0;
 volatile int segundosCalculo=0;
 volatile int pausaCalculo=1;
+volatile int empezarTiempo = 0;
 //Para saber si ha terminado
 volatile int casillasVacias = -1;
 
@@ -65,6 +67,20 @@ volatile int casillasVacias = -1;
 int BOTONIZQUIERDO = 4;
 int BOTONDERECHO = 8;
 // funciones que se necesitan
+void pintarCandidatos();
+void pintarValores();
+void pintarTablero();
+void pintarCandidatosRegion();
+void pintarValoresRegion();
+void pintarRegion();
+void pintarNumero24x48(int x,int y,int num,char color);
+void pintarLeyenda();
+void pintarCalculos();
+void pintarTiempoTotal();
+void pintarFinal();
+int calcularRegion();
+void pintarNormal();
+void pintarPre();
 /* *****************************************************************************
  * modifica el valor almacenado en la celda indicada, devuelve 0 si NO modifica bit error, 1 si SI que lo modifica */
 static inline int
@@ -145,6 +161,7 @@ void maquinaEstadosSudoku(){
 						estado= INICIO;
 						permitirPulsacionLarga = 0;
 						estadoPintar= PINTAR_NORMAL;
+						empezarTiempo = 1;
 					}
 					break;
 			case INICIO: //Estado inicial, pulsar boton izq para ir al siguiente estado
@@ -208,7 +225,7 @@ void maquinaEstadosSudoku(){
 
 								}
 								break;
-			case APARECER_C: //Comienza introdución de columna, pulsar izq s
+			case APARECER_C: //Comienza introdución de columna, pulsar izq
 				D8Led_symbol(12);
 				if (botonPulsado==BOTONIZQUIERDO ){
 					botonPulsado = 0;
@@ -301,33 +318,36 @@ void maquinaEstadosSudoku(){
 		//despues de calcular las modificaciones del tablero
 		//pasamos a pintar,
 		//pintar es puesto a 1 por la interrupcion de reloj del timer2 cada cierto tiempo
-		if (pintar!=0){
-			pintar = 0;
-			if (touchPulsado!=0){
-				touchPulsado=0;
+
+		if (touchPulsado!=0){
+			touchPulsado=0;
 
 
-				if (modoZoom==1){
-					modoZoom=0;
-				}else{
-					region = calcularRegion();
-					//si ha pulsado en una zona correcta, activamos zoom
-					if (region != -1)
+			if (modoZoom==1){
+				modoZoom=0;
+				pintarTodo=1;
+			}else{
+				region = calcularRegion();
+				//si ha pulsado en una zona correcta, activamos zoom
+				if (region != -1){
 					modoZoom=1;
+					pintarTodo=1;
 				}
-			}
-			switch (estadoPintar){
-				case PINTAR_PRE:
-					pintarPre();
-				break;
-				case PINTAR_NORMAL:
-					pintarNormal();
-					break;
-				case PINTAR_FIN:
-					pintarFinal();
-					break;
+
 			}
 		}
+		switch (estadoPintar){
+			case PINTAR_PRE:
+				pintarPre();
+			break;
+			case PINTAR_NORMAL:
+				pintarNormal();
+				break;
+			case PINTAR_FIN:
+				pintarFinal();
+				break;
+		}
+
 	}//fin while
 }
 
@@ -343,23 +363,33 @@ void maquinaEstadosSudoku(){
  *
  * 	de margen derecho queda 80 pixeles -> 10 letras y 13 lineas sie
  */
+
 void pintarPre(){
-	Lcd_Init();
+
 	Lcd_Clr();
 	Lcd_Active_Clr();
 	Lcd_DspAscII8x16(100,25,BLACK,"Toque la pantalla para jugar");
 	Lcd_Dma_Trans();
 }
 void pintarNormal(){
+	if (pintarTodo==1){
+
+
 	Lcd_Clr();
 	Lcd_Active_Clr();
+	}
 	//Pintar "tiempo total"
-	pintarTiempoTotal();
-	//Pintar "cálculos"
-	pintarCalculos();
+	if (pintar==1 || pintarTodo==1){
+		pintar=0;
+		pintarTiempoTotal();
+		//Pintar "cálculos"
+		pintarCalculos();
+	}
+	if (pintarTodo==1)pintarTodo=0;
 	//pintar leyenda "Introduzca Fila A para acabar la partida"
 	pintarLeyenda();
 	//si hay zoom
+	//modoZoom =1;
 	if (modoZoom==1){
 		//Region numerada
 		pintarRegion();
@@ -382,39 +412,56 @@ void pintarNormal(){
 	Lcd_Dma_Trans();
 }
 
-
 //apartir de los valores pulsados obtenemos que region es
 int calcularRegion(){
-	if (regStartX[0] <= Vx && Vx < regStartX[1] && regStartY[0] <= Vy && Vy < regStartY[1]){
+
+
+	//touch varia en x desde :89 a 340
+	// 				y desde : 745 a 518
+    //normalizar a 320x240
+	// tX= (tX-89);
+	//tX/340-89 = x / 320
+
+	//0		1   	2     	3
+	//80    140     198		267
+
+	//0		1			2			3
+	//710   685-673  	620-621		550 504
+	int v0=80,v1=140,v2=198,v3=257; // Separaciones verticales
+
+	int h0=710,h1=673,h2=620,h3=504;
+
+	if (v0 <= tX && tX < v1 && h1 < tY && tY <= h0){
 		regX=0;regY=0;
 		return 1;
-	}else if (regStartX[1] <= Vx && Vx< regStartX[2] && regStartY[0] <= Vy && Vy < regStartY[1]){
+	}else if (v1 <= tX && tX< v2 && h1 < tY && tY <= h0){
 		regX=0;regY=1;
 		return 2;
-	}else if (regStartX[2] <= Vx && Vx< regStartX[3] && regStartY[0] <= Vy && Vy < regStartY[1]){
+	}else if (v2 <= tX && tX< v3 && h1 < tY && tY <= h0){
 		regX=0;regY=2;
 		return 3;
-	}else if (regStartX[0] <= Vx && Vx < regStartX[1] && regStartY[1] <= Vy && Vy < regStartY[2]){
+	}else if (v0 <= tX && tX < v1 && h2 < tY && tY <= h1){
 		regX=1;regY=0;
 		return 4;
-	}else if (regStartX[1] <= Vx&& Vx < regStartX[2] && regStartY[1] <= Vy && Vy < regStartY[2]){
+	}else if (v1 <= tX && tX < v2 && h2 < tY && tY <= h1){
 		regX=1;regY=1;
 		return 5;
-	}else if (regStartX[2] <= Vx && Vx< regStartX[3] && regStartY[1] <= Vy  && Vy< regStartY[2]){
+	}else if (v2 <= tX && tX< v3 && h2 < tY  && tY<= h1){
 		regX=1;regY=2;
 		return 6;
-	}else if (regStartX[0] <= Vx && Vx< regStartX[1] && regStartY[2] <= Vy  && Vy< regStartY[3]){
+	}else if (v0 <= tX && tX< v1 && h3 < tY  && tY<= h2){
 		regX=2;regY=0;
 		return 7;
-	}else if (regStartX[1] <= Vx && Vx< regStartX[2] && regStartY[2] <= Vy && Vy < regStartY[3]){
+	}else if (v1 <= tX && tX< v2 && h3 < tY && tY <= h2){
 		regX=2;regY=1;
 		return 8;
-	}else if (regStartX[2] <= Vx && Vx< regStartX[3] && regStartY[2] <= Vy && Vy < regStartY[3]){
+	}else if (v2 <= tX && tX< v3 && h3 < tY && tY <= h2){
 		regX=2;regY=2;
 		return 9;
 	}
 	return -1;
 }
+
 void pintarFinal(){
 	Lcd_Clr();
 	Lcd_Active_Clr();
@@ -427,22 +474,28 @@ void pintarFinal(){
 	Lcd_DspAscII8x16(240,1, BLACK, "Toque la pantalla para jugar");
 	Lcd_Dma_Trans();
 }
+
+
 //FUNCIONEs AUXILIARes cuando es pintar normal
 void pintarTiempoTotal(){
+
+	LcdClrRect(textColum,34,textColum+70,34+16,WHITE);
 	Lcd_DspAscII8x16(textColum,0, BLACK, "Tiempo");
 	Lcd_DspAscII8x16(textColum,17, BLACK, "total:");
-	char *str= "";
+	char str[10];
+	strcpy(str,"");
 	strcat(str,  itoa(segundos));
 	strcat(str, ",");
 	strcat(str, itoa(decimasSegundos));
-	strcat(str,"\0");
+	str[9]='\0';
 	Lcd_DspAscII8x16(textColum,34,BLACK,str);
 }
 void pintarCalculos(){
 	Lcd_DspAscII8x16(textColum,51, BLACK, "Calculos");
 	//precision  de (0,0000 segundos) cuatro decimales; se multipla para obtener el resultado correcto
 	int deci= dosdecimilisegundosCalculo*2;
-	char *str= "";
+	char str[10];
+	strcpy(str,"");
 	strcat(str,  itoa(segundosCalculo));
 
 	if (deci <10){
@@ -459,7 +512,7 @@ void pintarCalculos(){
 	Lcd_DspAscII8x16(textColum,68,BLACK, str);
 }
 void pintarLeyenda(){
-	Lcd_DspAscII8x16(textColum,102, BLACK, "Introduzca");
+	Lcd_DspAscII8x16(textColum,102, BLACK, "Ponga");
 	Lcd_DspAscII8x16(textColum,119, BLACK, "Fila A ");
 	Lcd_DspAscII8x16(textColum,136, BLACK, "para ");
 	Lcd_DspAscII8x16(textColum,153, BLACK, "acabar ");
@@ -467,81 +520,80 @@ void pintarLeyenda(){
 	Lcd_DspAscII8x16(textColum,187, BLACK, "partida");
 }
 
-
-void pintarNumero24x48(int x,int y,int num){
+void pintarNumero24x48(int x,int y,int num,char color){
 	switch (num){
 	case 0:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+48,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
+		Lcd_Draw_HLine(x,x+24,y+48,color,1);
 
-		Lcd_Draw_VLine(y,y+48,x,BLACK,1);
-		Lcd_Draw_VLine(y,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+48,x,color,1);
+		Lcd_Draw_VLine(y,y+48,x+24,color,1);
 
 
 		break;
 	case 1:
-		Lcd_Draw_VLine(y,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+48,x+24,color,1);
 
 		break;
 	case 2:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+24,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+48,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
+		Lcd_Draw_HLine(x,x+24,y+24,color,1);
+		Lcd_Draw_HLine(x,x+24,y+48,color,1);
 
-		Lcd_Draw_VLine(y,y+24,x+24,BLACK,1);
-		Lcd_Draw_VLine(y+24,y+48,x,BLACK,1);
+		Lcd_Draw_VLine(y,y+24,x+24,color,1);
+		Lcd_Draw_VLine(y+24,y+48,x,color,1);
 		break;
 	case 3:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+24,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+48,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
+		Lcd_Draw_HLine(x,x+24,y+24,color,1);
+		Lcd_Draw_HLine(x,x+24,y+48,color,1);
 
-		Lcd_Draw_VLine(y,y+24,x+24,BLACK,1);
-		Lcd_Draw_VLine(y+24,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+24,x+24,color,1);
+		Lcd_Draw_VLine(y+24,y+48,x+24,color,1);
 		break;
 	case 4:
-		Lcd_Draw_VLine(y,y+24,x,BLACK,1);
-		Lcd_Draw_VLine(y,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+24,x,color,1);
+		Lcd_Draw_VLine(y,y+48,x+24,color,1);
 
-		Lcd_Draw_HLine(x,x+24,y+24,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y+24,color,1);
 		break;
 	case 5:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+24,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+48,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
+		Lcd_Draw_HLine(x,x+24,y+24,color,1);
+		Lcd_Draw_HLine(x,x+24,y+48,color,1);
 
-		Lcd_Draw_VLine(y,y+24,x,BLACK,1);
-		Lcd_Draw_VLine(y+24,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+24,x,color,1);
+		Lcd_Draw_VLine(y+24,y+48,x+24,color,1);
 
 		break;
 	case 6:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+24,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+48,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
+		Lcd_Draw_HLine(x,x+24,y+24,color,1);
+		Lcd_Draw_HLine(x,x+24,y+48,color,1);
 
-		Lcd_Draw_VLine(y,y+48,x,BLACK,1);
-		Lcd_Draw_VLine(y+24,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+48,x,color,1);
+		Lcd_Draw_VLine(y+24,y+48,x+24,color,1);
 		break;
 	case 7:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
 
-		Lcd_Draw_VLine(y,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+48,x+24,color,1);
 		break;
 	case 8:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+24,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+48,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
+		Lcd_Draw_HLine(x,x+24,y+24,color,1);
+		Lcd_Draw_HLine(x,x+24,y+48,color,1);
 
-		Lcd_Draw_VLine(y,y+48,x,BLACK,1);
-		Lcd_Draw_VLine(y,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+48,x,color,1);
+		Lcd_Draw_VLine(y,y+48,x+24,color,1);
 		break;
 	case 9:
-		Lcd_Draw_HLine(x,x+24,y,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+24,BLACK,1);
-		Lcd_Draw_HLine(x,x+24,y+48,BLACK,1);
+		Lcd_Draw_HLine(x,x+24,y,color,1);
+		Lcd_Draw_HLine(x,x+24,y+24,color,1);
+		Lcd_Draw_HLine(x,x+24,y+48,color,1);
 
-		Lcd_Draw_VLine(y,y+24,x,BLACK,1);
-		Lcd_Draw_VLine(y,y+48,x+24,BLACK,1);
+		Lcd_Draw_VLine(y,y+24,x,color,1);
+		Lcd_Draw_VLine(y,y+48,x+24,color,1);
 		break;
 	default:
 		break;
@@ -549,99 +601,164 @@ void pintarNumero24x48(int x,int y,int num){
 	}
 }
 //PINTAR REGION
+
 void pintarRegion(){
+
+
+
 	int i;
-	for (i=0;i<4;i++){
-		Lcd_Draw_HLine(regStartX[0],regStartX[3],regStartY[i],BLACK,1);
-		Lcd_Draw_HLine(regStartY[0],regStartY[3],regStartX[i],BLACK,1);
+	for (i=0;i<3;i++){
+		Lcd_Draw_HLine(regStartX[0],regStartX[3],regStartY[i],BLACK,2);
+		Lcd_Draw_VLine(regStartY[0],regStartY[3],regStartX[i],BLACK,2);
 
+		//pintar numeros borde
 		char v[2] ;
-		v[0]= '1'+(i+regX);
+		//numeros verticales
+		v[0]= '1'+(i+regX*3);
 		v[1]= '\0';
-		Lcd_DspAscII8x16(regStartX[0],regStartY[i],BLACK,v);
-		v[0]= '1'+(i+regY);
+		Lcd_DspAscII8x16(regStartX[0]-17,regStartY[i],BLACK,v);
+		//numeros horizontales
+		v[0]= '1'+(i+regY*3);
 		v[1]= '\0';
-		Lcd_DspAscII8x16(regStartX[i],regStartY[0],BLACK,v);
+		Lcd_DspAscII8x16(regStartX[i],regStartY[0]-17,BLACK,v);
 	}
-
+	Lcd_Draw_HLine(regStartX[0],regStartX[3],regStartY[3]-1,BLACK,2);
+	Lcd_Draw_VLine(regStartY[0],regStartY[3],regStartX[3],BLACK,2);
 }
 void pintarValoresRegion(){
 	int i,j;
+	char v[2];
 	for (i=0;i<3;i++){
 		for (j=0;j<3;j++){
-			int valor= celda_leerValor(cuadricula[i+regX][j+regY]);
-			pintarNumero24x48(regStartX[0]+17*i,regStartY[0]+17*j,valor);
-		}
-
-	}
-}
-void pintarCandidatosRegion(){
-	int i, j;
-	for (i=0; i<3; i++) {
-		for (j=0; j<3; j++) {
-			if (celda_leerValor(cuadricula[i+regX][j+regY]) == 0) {
-				CELDA candidatos = cuadricula[i+regX][j+regY];
-				candidatos &= 0x01FF;
-				int z;
-				for (z=0; z<9; z++) {
-					if ((candidatos & (1 << z)) != 0)
-						Lcd_DspAscII8x16(6*(z)+6+20*(j+1), 30+5*(z/3)+20*(i+1), BLACK, ".");
-				}
-			}
-		}
-	}
-}
-//PINTAR TAblero
-void pintarTablero(){
-	int i;
-	for (i=1; i<=9; i++) {
-		if (i==1 || i==4 || i==7) {
-			Lcd_Draw_HLine(25,205,55+(i-1)*20,BLACK,2);
-			Lcd_Draw_VLine (55,235,25+(i-1)*20,BLACK,2);
-		}
-		else {
-			Lcd_Draw_HLine(25,205,55+(i-1)*20,BLACK,1);
-			Lcd_Draw_VLine (55,235,25+(i-1)*20,BLACK,1);
-		}
-	}
-	Lcd_Draw_HLine(25,205,235,BLACK,2);
-	Lcd_Draw_VLine (55,235,205,BLACK,2);
-}
-void pintarValores(){
-	short int i, j;
-	for (i=1; i<=9; i++) {
-		for (j=1; j<=9; j++) {
-			uint8_t valor;
-			if ((valor=celda_leerValor(cuadricula[i-1][j-1])) != 0) {
-				switch (esPista(i-1,j-1)) {
+			int valor= celda_leerValor(cuadricula[i+regX*3][j+regY*3]);
+			if (valor != 0) {
+				switch (esPista(i+regX*3,j+regY*3)) {
 				case 0:
-					//Lcd_pintarNumero(i,j,valor,DARKGRAY);
+
+					v[0] = '0';
+					v[0] += valor;
+					v[1]='\0';
+					//Lcd_DspAscII8x16(regStartX[j], regStartY[i], DARKGRAY, v);
+					pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,DARKGRAY);
 					break;
 				case 1:
-					//Lcd_pintarNumero(i,j,valor,BLACK);
+					v[0] = '0';
+					v[0] += valor;
+					v[1]='\0';
+					//Lcd_DspAscII8x16(regStartX[j], regStartY[i], BLACK, v);
+					pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,BLACK);
 					break;
 				default:
 					break;
 				}
-				if (esError(cuadricula[i-1][j-1])==TRUE) {
+				if (esError(cuadricula[i+regX*3][j+regY*3])==TRUE) {
 					Lcd_Draw_Box(28+(j-1)*20, 58+(i-1)*20, 15+28+(j-1)*20, 15+58+(i-1)*20, BLACK);
 				}
 			}
 		}
 	}
 }
+
+void pintarCandidatosRegion(){
+	int i, j;
+	char v[2];
+	for (i=0; i<3; i++) {
+		for (j=0; j<3; j++) {
+			int valor=celda_leerValor(cuadricula[i+regX*3][j+regY*3]);
+			if (valor == 0) {
+				CELDA candidatos = cuadricula[i+regX*3][j+regY*3];
+				candidatos &= 0x1FF0;
+				candidatos = candidatos >> 4;
+
+				v[1]='\0';
+				int desplazador;
+				for (desplazador=0; desplazador<9; desplazador++) {
+				if ((candidatos & (1 << desplazador)) != 0){
+					v[0]='1'+desplazador;
+					Lcd_DspAscII8x16(25*(desplazador%3)+regStartX[j]+10, 25*(desplazador/3)+regStartY[i]+5, BLACK, v);
+				}
+
+
+				}
+			}
+		}
+	}
+}
+//PINTAR TAblero
+
+void pintarTablero(){
+	int i;
+	for (i=0; i<9; i++) {
+		//pintar numeros borde
+		char v[2] ;
+		//numeros verticales y horizontales
+		v[0]= '1'+i;
+		v[1]= '\0';
+		Lcd_DspAscII8x16(regStartX[0]-17,regStartY[0]+25*i,BLACK,v);
+		Lcd_DspAscII8x16(regStartX[0]+25*i,regStartY[0]-17,BLACK,v);
+
+		//pintar lineas
+		if (i==0 || i==3 || i==6) {
+			Lcd_Draw_HLine(regStartX[0],regStartX[3],regStartY[0]+i*25,BLACK,2);
+			Lcd_Draw_VLine(regStartY[0],regStartY[3],regStartX[0]+i*25,BLACK,2);
+		}
+		else {
+			Lcd_Draw_HLine(regStartX[0],regStartX[3],regStartY[0]+i*25,BLACK,1);
+			Lcd_Draw_VLine(regStartY[0],regStartY[3],regStartX[0]+i*25,BLACK,1);
+		}
+
+	}
+	Lcd_Draw_HLine(regStartX[0],regStartX[3],regStartY[3]-1,BLACK,2);
+	Lcd_Draw_VLine(regStartY[0],regStartY[3],regStartX[3],BLACK,2);
+}
+
+void pintarValores(){
+	short int i, j;
+	char v[2] ;
+	for (i=0; i<9; i++) {
+		for (j=0; j<9; j++) {
+			uint8_t valor;
+			if ((valor=celda_leerValor(cuadricula[i][j])) != 0) {
+				switch (esPista(i,j)) {
+				case 0:
+
+					v[0] = '0';
+					v[0] += valor;
+					v[1]='\0';
+					Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), DARKGRAY, v);
+					break;
+				case 1:
+					v[0] = '0';
+					v[0] += valor;
+					v[1]='\0';
+					Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), BLACK, v);
+					break;
+				default:
+					break;
+				}
+				if (esError(cuadricula[i][j])==TRUE) {
+					Lcd_Draw_Box(regStartX[j/3]+25*(j%3), regStartY[i/3]+25*(i%3), regStartX[(1+j)/3]+25*((1+j)%3), regStartY[(i+1)/3]+25*((i+1)%3), BLACK);
+				}
+			}
+		}
+	}
+}
+
 void pintarCandidatos(){
 	short int i, j;
 	for (i=0; i<9; i++) {
 		for (j=0; j<9; j++) {
 			if (celda_leerValor(cuadricula[i][j]) == 0) {
 				CELDA candidatos = cuadricula[i][j];
-				candidatos &= 0x01FF;
-				short int it;
-				CELDA aux;
-				for (it=0; it<9; it++) {
-					aux = candidatos & (0x01 << it);
-					if ((candidatos & (0x01 << it)) != 0)	Lcd_DspAscII8x16(6*(it%3)+6+20*(j+1), 30+5*(it/3)+20*(i+1), BLACK, ".");
+				candidatos &= 0x1FF0;
+				candidatos = candidatos >> 4;
+				int desplazador;
+				for (desplazador=0; desplazador<9; desplazador++) {
+					if ((candidatos & (1 << desplazador)) != 0){
+						Lcd_DspAscII8x16(regStartX[j/3]+3+25*(j%3)+(desplazador%3)*6, regStartY[i/3]-2+25*(i%3)+(desplazador/3)*6, BLACK,".");
+						//Lcd_DspAscII8x16(regStartX[0]++5+6*(j%3), regStartY[i/3]+5+6*(i%3), DARKGRAY, ".");
+					}
+
 				}
 			}
 		}

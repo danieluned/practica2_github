@@ -14,9 +14,16 @@
 /*--- variables globales ---*/
 volatile int timer2_num_int=0;
 volatile int pruebaTimer2=0;
+
+
+
+extern int segundosCalculo;
+extern int segundos;
 extern int decimasSegundos;
 extern int dosdecimilisegundosCalculo;
 extern int pausaCalculo;
+extern int pintar;
+extern int empezarTiempo;
 /* declaración de función que es rutina de servicio de interrupción
  * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
 void timer2_ISR(void) __attribute__((interrupt("IRQ")));
@@ -25,14 +32,31 @@ void timer2_ISR(void) __attribute__((interrupt("IRQ")));
 void timer2_ISR(void)
 {
 	timer2_num_int = 1+timer2_num_int;
+
 	//50ticks son 1 decima de segundo
 	// 1 = 2 dmilimasegundo
+	if(empezarTiempo==1){
+		if(timer2_num_int%50==0){
+			decimasSegundos++;
+			if(decimasSegundos>9){
+				decimasSegundos = 0;
+				segundos++;
+			}
+		}
+	}
 	if(timer2_num_int%50==0){
-		decimasSegundos++;
+		pintar=1;
 	}
-	if(pausaCalculo!=0){
+
+	if(pausaCalculo!=1){
 		dosdecimilisegundosCalculo++;
+		if (dosdecimilisegundosCalculo*2 > 10000){
+			segundosCalculo++;
+			dosdecimilisegundosCalculo=0;
+		}
 	}
+
+
 	/* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
 	rI_ISPC |= BIT_TIMER2; // BIT_TIMER2 está definido en 44b.h y pone un uno en el bit que correponde al Timer2
 }
@@ -52,7 +76,7 @@ void timer2_inicializar(){
 
 	rINTMOD = 0x0; // Configura las linas como de tipo IRQ
 	rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
-	rINTMSK &= ~(BIT_GLOBAL | BIT_TIMER2); // Emascara todas las lineas excepto Timer2 y el bit global (bits 26 y 11, BIT_GLOBAL y BIT_TIMER2 están definidos en 44b.h)
+	rINTMSK &= ~(BIT_GLOBAL | BIT_TIMER2 ); // Emascara todas las lineas excepto Timer2 y el bit global (bits 26 y 11, BIT_GLOBAL y BIT_TIMER2 están definidos en 44b.h)
 
 	/* Establece la rutina de servicio para TIMER0 */
 	pISR_TIMER2 = (unsigned) timer2_ISR;
