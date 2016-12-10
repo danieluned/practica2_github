@@ -17,6 +17,7 @@
 #include "sudoku_2016.h"
 #include "pilaDepuracion.h"
 #include "maquinaEstadoSudoku.h"
+#include "tp.h"
 /*--- variables globales ---*/
 
 
@@ -28,21 +29,24 @@ void Main(void)
 	sys_init();         // Inicializacion de la placa, interrupciones y puertos
 	excepciones_inicializar();
 
-	timer2_inicializar();  //TIMER 2 , para el tiempo global
 
 	timer0_inicializar();
 	//timer_init();	    // Inicializacion del temporizador NO SE USA
 	Eint4567_init();	// inicializamos los pulsadores. Cada vez que se pulse se verá reflejado en el 8led
 	D8Led_init();       // inicializamos el 8led
 
-
+	timer2_inicializar();  //TIMER 2 , para el tiempo global
+	timer2_empezar();
+	Lcd_Init();
+	TS_init();
 	/* Valor inicial de los leds */
 	leds_off();
 	led1_on();
 
 	limpiadoPila();
+
 	//Iniciamos el tiempo del sistema.
-	timer2_empezar();
+
 
 
 

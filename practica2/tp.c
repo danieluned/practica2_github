@@ -10,7 +10,9 @@
 #include "tp.h"
 #include "lcd.h"
 #include "common\44blib.h"
-extern touchPulsado;
+extern int touchPulsado;
+extern int tX;
+extern int tY;
 void TSInt(void) __attribute__((interrupt("IRQ")));
 /*--- codigo de las funciones ---*/
 
@@ -46,7 +48,7 @@ void TSInt(void)
 	rADCCON=0x1<<2;			// AIN1
 	
 	//DelayTime(1000);                // delay to set up the next channel
-	Delay(1000);
+	//Delay(1000);
 	for( i=0; i<5; i++ )
 	{
 		rADCCON |= 0x1;				// Start X-position A/D conversion
@@ -66,7 +68,7 @@ void TSInt(void)
 	rADCCON=0x0<<2;		        	// AIN0
 	
 	//DelayTime(1000);                // delay to set up the next channel
-	Delay(1000);
+	//Delay(1000);
 	for( i=0; i<5; i++ )
 	{
     	rADCCON |= 0x1;             // Start Y-position conversion
@@ -90,13 +92,15 @@ void TSInt(void)
  	/*----------- check to ensure Xmax Ymax Xmin Ymin ------------*/
  	    DesignREC(tmp,Pt[5]);
 
-	rPDATE = 0xb8;                  // should be enabled	
+	rPDATE = 0xb8;                  // should be enabled
 	//DelayTime(3000);                // delay to set up the next channel
-	Delay(3000);
-    rI_ISPC = BIT_EINT2;            // clear pending_bitb
+	//Delay(3000);
+    rI_ISPC |= BIT_EINT2;            // clear pending_bitb
 
     //anunciar que se ha pulsado el touchPad
     touchPulsado = 1;
+    tX=tmp;
+    tY=Pt[5];
 }
 			
 /*********************************************************************************************
@@ -118,15 +122,15 @@ void TS_init(void)
 	//          1               1                0                 1
     rPUPE  = 0x0;	                 // Pull up
     rPDATE = 0xb8;                   // should be enabled	
-   // DelayTime(100);
-    Delay(100);
+
+
     rEXTINT |= 0x200;                // falling edge trigger
     pISR_EINT2=(unsigned)TSInt;       // set interrupt handler
     
-    rCLKCON = 0x7ff8;                // enable clock
-    rADCPSR = 0x1;//0x4;             // A/D prescaler
-    rINTMSK =~(BIT_GLOBAL|BIT_EINT2);
+    //rCLKCON = 0x7ff8;                // enable clock
+    //rADCPSR = 0x1;//0x4;             // A/D prescaler
 
+    rINTMSK &= ~(BIT_GLOBAL | BIT_EINT2 );
     oneTouch = 0;
 }
 
