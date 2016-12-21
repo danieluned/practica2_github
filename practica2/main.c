@@ -26,9 +26,10 @@
 void Main(void)
 {
 	/* Inicializa controladores */
+
 	sys_init();         // Inicializacion de la placa, interrupciones y puertos
 	excepciones_inicializar();
-
+	Lcd_Init();
 
 	timer0_inicializar();
 	//timer_init();	    // Inicializacion del temporizador NO SE USA
@@ -37,8 +38,10 @@ void Main(void)
 
 	timer2_inicializar();  //TIMER 2 , para el tiempo global
 	timer2_empezar();
-	Lcd_Init();
+
 	TS_init();
+
+
 	/* Valor inicial de los leds */
 	leds_off();
 	led1_on();

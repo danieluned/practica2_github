@@ -26,6 +26,16 @@ void TS_Test(void)
 		//Uart_Printf("\nLCD TouchScreen Test Example(please touch LCD screen)\n");
 }
 /*--- function code ---*/
+volatile int a= 0; //para evitar q salte el bucle
+void DelayMs2(int ms_time)
+{
+	int i;
+
+	for (i = 0; i < 1000*ms_time ; i++){
+		a= a+i;
+	}
+		;
+}
 /*********************************************************************************************
 * name:		TSInt
 * func:		TouchScreen interrupt handler function
@@ -48,7 +58,7 @@ void TSInt(void)
 	rADCCON=0x1<<2;			// AIN1
 	
 	//DelayTime(1000);                // delay to set up the next channel
-	//Delay(1000);
+	DelayMs2(10);
 	for( i=0; i<5; i++ )
 	{
 		rADCCON |= 0x1;				// Start X-position A/D conversion
@@ -68,7 +78,7 @@ void TSInt(void)
 	rADCCON=0x0<<2;		        	// AIN0
 	
 	//DelayTime(1000);                // delay to set up the next channel
-	//Delay(1000);
+	DelayMs2(20);
 	for( i=0; i<5; i++ )
 	{
     	rADCCON |= 0x1;             // Start Y-position conversion
@@ -94,7 +104,7 @@ void TSInt(void)
 
 	rPDATE = 0xb8;                  // should be enabled
 	//DelayTime(3000);                // delay to set up the next channel
-	//Delay(3000);
+	DelayMs2(150);
     rI_ISPC |= BIT_EINT2;            // clear pending_bitb
 
     //anunciar que se ha pulsado el touchPad

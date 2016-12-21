@@ -11,6 +11,8 @@
     .include "option.a"
     .include "memcfg.a"
 
+#define MODOECLIPSE 0 /* 1=Eclipse , 0=Placa */
+
 #Memory Area
 #GCS6    8M 16bit(8MB) DRAM/SDRAM(0xc000000-0xc7fffff)
 #APP     RAM=0xc000000~0xc7effff 
@@ -223,6 +225,36 @@ ResetHandler:
     ldr	    r1,=0x07ffffff  	/* all interrupt disable */
     str	    r1,[r0]
 
+	#****************************************************
+	#* Codigo nuevo Para funcionamiento en flash
+	#****************************************************
+.if (MODOECLIPSE == 0)
+
+	ldr	    r0,=(SMRDATA-0xc000000)
+    ldmia   r0,{r1-r13}
+    ldr	    r0,=0x01c80000  	// BWSCON Address
+    stmia   r0,{r1-r13}
+
+	LDR r0,=0x0
+	LDR r1,=Image_RO_Base
+	LDR r3,=Image_ZI_Base
+LoopRw:
+    cmp         r1, r3
+	ldrcc       r2, [r0], #4
+	strcc       r2, [r1], #4
+	bcc         LoopRw
+
+	// código nuevo (Darío)
+        LDR r0, =Image_ZI_Base
+        LDR r1, =Image_ZI_Limit
+        mov r3, #0
+LoopZI:
+        cmp r0, r1
+        strcc r3, [r0], #4
+        bcc LoopZI
+	//fin código nuevo (Darío)
+.endif
+
     #****************************************************
     #*	Set clock control registers						*
     #****************************************************
@@ -275,25 +307,29 @@ ResetHandler:
     #********************************************************
     #*	Copy and paste RW data/zero initialized data	    *
     #********************************************************
-    LDR	    r0, =Image_RO_Limit	/* Get pointer to ROM data */
-    LDR	    r1, =Image_RW_Base	/* and RAM copy	*/
-    LDR	    r3, =Image_ZI_Base	
-	/* Zero init base => top of initialised data */
+.if (MODOECLIPSE == 1)
+
+    LDR	    r0, =Image_RO_Limit	 // Get pointer to ROM data
+    LDR	    r1, =Image_RW_Base	//and RAM copy
+    LDR	    r3, =Image_ZI_Base
+	//Zero init base => top of initialised data
 			
-    CMP	    r0, r1	    		/* Check that they are different */
+    CMP	    r0, r1	    		// Check that they are different
     BEQ	    F1
 F0:
-    CMP	    r1, r3				/* Copy init data                        */
-    LDRCC   r2, [r0], #4        /* --> LDRCC r2, [r0] + ADD r0, r0, #4	 */
-    STRCC   r2, [r1], #4        /* --> STRCC r2, [r1] + ADD r1, r1, #4   */ 
+    CMP	    r1, r3				// Copy init data
+    LDRCC   r2, [r0], #4        // --> LDRCC r2, [r0] + ADD r0, r0, #4
+    STRCC   r2, [r1], #4        //--> STRCC r2, [r1] + ADD r1, r1, #4
     BCC	    F0
 F1:
-    LDR	    r1, =Image_ZI_Limit	/* Top of zero init segment */
+    LDR	    r1, =Image_ZI_Limit	// Top of zero init segment
     MOV	    r2, #0
 F2:
-    CMP	    r3, r1	    		/* Zero init */
+    CMP	    r3, r1	    		// Zero init
     STRCC   r2, [r3], #4
     BCC	    F2
+.endif
+	// HASTA AQUI
 
 	MRS	r0, CPSR
 	BIC	r0, r0, #NOINT /* enable interrupt */

@@ -31,7 +31,9 @@ typedef uint16_t CELDA;
 
 /* declaracion de funciones visibles en el exterior */
 extern CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS];
-
+extern CELDA cuadricula1[NUM_FILAS][NUM_COLUMNAS];
+extern CELDA cuadricula2[NUM_FILAS][NUM_COLUMNAS];
+extern CELDA cuadricula3[NUM_FILAS][NUM_COLUMNAS];
 
 /* *****************************************************************************
  * programa principal del juego que recibe el tablero,
@@ -86,5 +88,7 @@ void
 sudoku_candidatos_propagar_thumb(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS],
                                  uint8_t fila, uint8_t columna);
 
-
+void
+cuadricula_copiar(CELDA destino[NUM_FILAS][NUM_COLUMNAS],
+					CELDA original[NUM_FILAS][NUM_COLUMNAS] );
 #endif /* SUDOKU_H_2016 */

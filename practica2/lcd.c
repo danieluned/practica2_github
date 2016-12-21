@@ -420,7 +420,7 @@ void ReverseLine(INT32U ulHeight, INT32U ulY)
 * modify:
 * comment:		
 *********************************************************************************************/
-static INT8U ucZdma0Done=1;	//When DMA is finish,ucZdma0Done is cleared to Zero
+static volatile INT8U ucZdma0Done=1;	//When DMA is finish,ucZdma0Done is cleared to Zero
 void Zdma0Done(void)
 {
 	rI_ISPC=BIT_ZDMA0;	    //clear pending

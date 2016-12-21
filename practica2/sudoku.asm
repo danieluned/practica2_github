@@ -803,95 +803,68 @@ salto2_at:
 
 		ANDS r2,r3,r8 			// Comparacion para calcular vacios
 		addeq r9,r9,#0x1		// si no hay valor sumamos vacios +1
-		ANDs r2, r3,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si1
-		ANDS r2,r3,r8 			// Comprobamos si en r3 hay valor
 		movne r2, #0x0			// si hay valor, al llamar a la funcion la columna para propagar sera r2
 		ADRL    r11, sudoku_candidatos_propagar_thumb+1 // Se usa ADRL ya que la distancia es demasiado grande para usar ADR
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si1:
+
 		LDR r11, =0xF0000
         ANDS r2,r3,r11
         addeq r9,r9,#0x1
-		ANDs r2, r3,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si2
-		ANDS r2,r3,r11
 		movne r2, #0x1
 		ADRL    r11, sudoku_candidatos_propagar_thumb+1 // Se usa ADRL ya que la distancia es demasiado grande para usar ADR
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si2:
+
         ANDS r2,r4,r8
 		addeq r9,r9,#0x1
-		ANDs r2, r4,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si3
-		 ANDS r2,r4,r8
 		movne r2, #0x2
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si3:
+
 		LDR r11, =0xF0000
         ANDS r2,r4,r11
 		addeq r9,r9,#0x1
-		ANDs r2, r4,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si4
-		 ANDS r2,r4,r11
 		movne r2, #0x3
 		ADR   r11, sudoku_candidatos_propagar_thumb+1
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si4:
+
         ANDS r2,r5,r8
 		addeq r9,r9,#0x1
-		ANDs r2, r5,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si5
-		 ANDS r2,r5,r8
 		movne r2, #0x4
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si5:
+
 		LDR r11, =0xF0000
         ANDS r2,r5,r11
 		addeq r9,r9,#0x1
-		ANDs r2, r5,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si6
-		ANDS r2,r5,r11
 		movne r2, #0x5
 		ADR   r11, sudoku_candidatos_propagar_thumb+1
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si6:
+
         ANDS r2,r6,r8
 		addeq r9,r9,#0x1
-		ANDs r2, r6,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si7
-		ANDS r2,r6,r8
 		movne r2, #0x6
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si7:
+
 		LDR r11, =0xF0000
         ANDS r2,r6,r11
 		addeq r9,r9,#0x1
-		ANDs r2, r6,#0x40000000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si8
-		ANDS r2,r6,r11
 		movne r2, #0x7
 		ADR   r11, sudoku_candidatos_propagar_thumb+1
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
-si8:
+
         ANDS r2,r7,r8
 		addeq r9,r9,#0x1
-		ANDs r2, r7,#0x4000		//Comprobacion para saltar si hay error a la siguiente celda
-		bne si9
-		ANDS r2,r7,r8
 		movne r2, #0x8
 		movne lr, pc	//		(solo faltaba poner el valor de la columna a r2 antes de llamarla)
         bxne  r11
 		//fin de la llamada a otra funcion
-si9:
+
 		ADD r1, r1, #0x1 //Incrementa fila
 		ADD r10,r10, #0b100000
 		CMP r1,#9 //Comprueba si es la última fila
@@ -918,6 +891,7 @@ sudoku_candidatos_propagar_thumb:
         # Poned el código aquí:
 		// En r0 esta la @cuadricula, en r1 fila , en r2 columna
 		//saltamos las filas necesarias
+
       	mov r3,#0b100000
       	mul r3, r1,r3
       	add r3,r3,r0
@@ -926,8 +900,10 @@ sudoku_candidatos_propagar_thumb:
 		mov r4,#0b10  // para calcular la columna donde esta
 		mul r4,r2,r4  //se multiplica por 2, que es el número de bytes de cada casilla
 		add r4,r4,r3
+		push {r4} 	//reservado @celda en r7, celda, palito
+ 		ldrh r4, [r4] // en r4 esta la celda que nos piden
+		push {r4}
 
-		ldrh r4, [r4] // en r4 esta la celda que nos piden
 		mov r5,#0b1111
 		AND r4, r4, r5 // r4 = valor, el numero que nos piden
 
@@ -935,6 +911,8 @@ sudoku_candidatos_propagar_thumb:
 		add r6,r4,#0x3  //  r6 = (columna+3)
 		mov r5,#1
 		LSL r5,r6		// en r5 esta la mascara sin negar
+		push {r5}
+
 		LSL r6,r5,#16	// r6 mascara sin negar superior
 		add r5,r5,r6		//r5 mascara doble sin negar
 		mvn r5, r5 // r5 = mascara ,r3= @filaInicialdelvalor
@@ -1100,7 +1078,20 @@ sinalinear2:
 continuar2:
         # restore the original registers
 
-    	 pop  {r0,r1,r2,r3,r4, r5, r6, r7}
+		pop {r0,r1,r2} 	//palito, celda , @
+			//r5 se tiene la mascara inferior sin negar(palito) y r7 @celda
+		mov r3, r1
+		//si se tiene en cadidatos el palito volver a ponerl
+		and r3,r0	// sera distinto de 0 si el valor estaba en candidatos
+		CMP r3,#0
+		beq  finalizarThu
+		orr r1,r0
+    	strh r1,[r2]
+
+
+
+ finalizarThu:
+ 		 pop  {r0,r1,r2,r3,r4, r5, r6, r7}
     	 bx r14
 
 ################################################################################
@@ -1112,21 +1103,22 @@ continuar2:
 .global cuadricula
 cuadricula:
      /* SUDOKU 2 - Otro ejemplo */
-    //.hword   0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
-	//.hword   0x0000,0x0000,0x0000,	0x0000,0x0000,0x8003,	0x0000,0x8008,0x8005,	0,0,0,0,0,0,0
-	//.hword   0x0000,0x0000,0x8001,	0x0000,0x8002,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x0000,	0x0000,0x0000,0x8003,	0x0000,0x8008,0x8005,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x8001,	0x0000,0x8002,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
 
-	//.hword   0x0000,0x0000,0x0000,	0x8005,0x0000,0x8007,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
-	//.hword   0x0000,0x0000,0x8004,	0x0000,0x0000,0x0000,	0x8001,0x0000,0x0000,	0,0,0,0,0,0,0
-	//.hword   0x0000,0x8009,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x0000,	0x8005,0x0000,0x8007,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x8004,	0x0000,0x0000,0x0000,	0x8001,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x8009,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
 
-	//.hword   0x8005,0x0000,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x8007,0x8003,	0,0,0,0,0,0,0
-	//.hword   0x0000,0x0000,0x8002,	0x0000,0x8001,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
-	//.hword   0x0000,0x0000,0x0000,	0x0000,0x8004,0x0000,	0x0000,0x0000,0x8009,	0,0,0,0,0,0,0
-
-
+	.hword   0x8005,0x0000,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x8007,0x8003,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x8002,	0x0000,0x8001,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x0000,	0x0000,0x8004,0x0000,	0x0000,0x0000,0x8009,	0,0,0,0,0,0,0
 
 
+
+.global cuadricula1
+cuadricula1:
     /* SUDOKU 1 - Ejemplo inicial */
 	/* 9 filas de 16 entradas para facilitar la visualizacion, 16 bits por celda */
     .hword   0x8005,0x0000,0x0000,	0x8003,0x0000,0x0000,	0x0000,0x0000,0x0000,0,0,0,0,0,0,0
@@ -1140,6 +1132,37 @@ cuadricula:
     .hword   0x0000,0x8007,0x0000,	0x8005,0x0000,0x8009,	0x8002,0x8006,0x0000,0,0,0,0,0,0,0
     .hword   0x8006,0x0000,0x0000,	0x0000,0x8008,0x0000,	0x0000,0x0000,0x0000,0,0,0,0,0,0,0
     .hword   0x0000,0x0000,0x0000,	0x0000,0x0000,0x8002,	0x0000,0x0000,0x8001,0,0,0,0,0,0,0
+
+.global cuadricula2
+cuadricula2:
+    // para pruebas
+    .hword   0x8005,0x8001,0x8007,	0x8003,0x0002,0x0008,	0x0009,0x0000,0x0006,0,0,0,0,0,0,0
+    .hword   0x8008,0x8002,0x8003,	0x0004,0x8009,0x0006,	0x0007,0x0000,0x8005,0,0,0,0,0,0,0
+    .hword   0x8004,0x8009,0x8006,	0x8007,0x0001,0x8005,	0x0000,0x8003,0x0000,0,0,0,0,0,0,0
+
+    .hword   0x8002,0x8008,0x8001,	0x8009,0x0004,0x0007,	0x8006,0x0005,0x0003,0,0,0,0,0,0,0
+    .hword   0x0007,0x0003,0x8005,	0x8008,0x8006,0x8001,	0x8004,0x0002,0x0009,0,0,0,0,0,0,0
+    .hword   0x0009,0x0006,0x8004,	0x8002,0x0005,0x8003,	0x0001,0x8007,0x0008,0,0,0,0,0,0,0
+
+    .hword   0x0001,0x8007,0x0008,	0x8005,0x0003,0x8009,	0x8002,0x8006,0x0004,0,0,0,0,0,0,0
+    .hword   0x8006,0x0005,0x0002,	0x0001,0x8008,0x0004,	0x0003,0x0009,0x0007,0,0,0,0,0,0,0
+    .hword   0x0003,0x0004,0x0009,	0x0006,0x0007,0x8002,	0x0005,0x0008,0x8001,0,0,0,0,0,0,0
+.global cuadricula3
+
+cuadricula3:
+     /* SUDOKU 3 - Otro ejemplo */
+    .hword   0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x0000,	0x0000,0x0000,0x8003,	0x0000,0x8008,0x8005,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x8001,	0x0000,0x8002,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+
+	.hword   0x0000,0x0000,0x0000,	0x8005,0x0000,0x8007,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x8004,	0x0000,0x0000,0x0000,	0x8001,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x8009,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+
+	.hword   0x8005,0x0000,0x0000,	0x0000,0x0000,0x0000,	0x0000,0x8007,0x8003,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x8002,	0x0000,0x8001,0x0000,	0x0000,0x0000,0x0000,	0,0,0,0,0,0,0
+	.hword   0x0000,0x0000,0x0000,	0x0000,0x8004,0x0000,	0x0000,0x0000,0x8009,	0,0,0,0,0,0,0
+
 
 .end
 #        END

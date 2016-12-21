@@ -8,7 +8,7 @@
 #include "sudoku_2016.h"
 #include "lcd.h"
 #include "itoa.h"
-
+#include "44blib.h"
 enum {
 	//ESTADOS LÓGICA JUEGO
     INICIO      					= 0,
@@ -22,10 +22,12 @@ enum {
     FIN_ESTADISTICAS				= 12,
     PRE_INICIO 						= 8,
     MOSTRAR_NUMEROS_1_9_F_A			= 13,
+    MOSTRAR_NUMEROS_1_3				= 14,
     //ESTADOS DE LA PANTALLA
     PINTAR_PRE						= 9,
     PINTAR_NORMAL					= 10,
-    PINTAR_FIN						= 11
+    PINTAR_FIN						= 11,
+    PINTAR_SELECCION				= 15
 };
 
 // Variables y valores iniciales
@@ -46,13 +48,14 @@ volatile int pintar = 0;		//Indica si se ha de pintar de nuevo el tiempo
 volatile int pintarTodo = 0;
 volatile int estadoPintar = PINTAR_PRE;
 volatile int region=-1;
+volatile int unaVez=0;
 //valor region pinchada
-int regX=0,regY=0;
+volatile int regX=0,regY=0;
 
 //valores para dibujar tablero
-int regStartX[4] ={ 18, 92, 166, 240};
-int regStartY[4] ={ 18, 92, 166, 240};
-int textColum = 258;
+volatile int regStartX[4] ={ 18, 92, 166, 240};
+volatile int regStartY[4] ={ 18, 92, 166, 240};
+volatile int textColum = 258;
 //Tiempo total de partida en segundos
 volatile int decimasSegundos = 0;
 volatile int segundos = 0;
@@ -62,10 +65,11 @@ volatile int pausaCalculo=1;
 volatile int empezarTiempo = 0;
 //Para saber si ha terminado
 volatile int casillasVacias = -1;
+volatile int rebotesTouch=0;
 
 //CONSTANTES
-int BOTONIZQUIERDO = 4;
-int BOTONDERECHO = 8;
+volatile int BOTONIZQUIERDO = 4;
+volatile int BOTONDERECHO = 8;
 // funciones que se necesitan
 void pintarCandidatos();
 void pintarValores();
@@ -88,16 +92,7 @@ celda_ponerValor(CELDA *celdaptr, uint8_t val)
 {
 
 	//Quitamos bit de error siempre, si es necesario se activa a continuación
-    *celdaptr = (*celdaptr & 0xBFF0) | (val & 0x000F);
-
-
-    //Cálculo del bit de error
-    uint16_t propa = 1<<(val+3);
-    if ( val != 0 && (*celdaptr & propa) == 0 ){
-    	//no podia ser ese valor un candidato, hay que activar el bit de error
-    	*celdaptr = (*celdaptr | 0x4000);
-    	return 1; //Ha activado bit de error
-    }
+    *celdaptr = (*celdaptr & 0xFFF0) | (val & 0x000F);
     return 0;
 }
 
@@ -113,24 +108,38 @@ int esError(CELDA celda){
 }
 void borrarValorEn(uint8_t fila,uint8_t columna){
 	celda_ponerValor(&cuadricula[fila][columna],0);
-	sudoku_candidatos_init_arm_thumb(cuadricula);
+	casillasVacias = sudoku_candidatos_init_arm_thumb(cuadricula);
 }
 //Devuelve 1 si hay error (no está en candidatos), 0 si no hay error
 int introducirValorEn(uint8_t fila,uint8_t columna,uint8_t valor){
 	int hayError = 0; //nohay error = 0, error si = 1;
 	if (celda_leerValor(cuadricula[fila][columna]) != 0){
 		hayError= celda_ponerValor(&cuadricula[fila][columna],valor);
-		sudoku_candidatos_init_arm_thumb(cuadricula);
+		casillasVacias = sudoku_candidatos_init_arm_thumb(cuadricula);
 	}else{
 		hayError = celda_ponerValor(&cuadricula[fila][columna],valor);
-		if(hayError==0) { //Si no ha habido error, propago
-			sudoku_candidatos_propagar_thumb(cuadricula,fila,columna);
-		}
+		casillasVacias = casillasVacias - 1;
+		sudoku_candidatos_propagar_thumb(cuadricula,fila,columna);
+
 
 	}
 	return hayError;
 }
+void reiniciarSodu(){
+	int i;
+	for (i=0;i<9;i++){
+		int j;
+		for (j=0;j<9;j++){
+			if(esPista(i,j)==0){
+				cuadricula[i][j]=  cuadricula[i][j] & 0x800F;
+			}else{
+				cuadricula[i][j]=  cuadricula[i][j] & 0x0;
+			}
 
+		}
+	}
+	casillasVacias = sudoku_candidatos_init_arm_thumb(cuadricula);
+}
 int esPista(int fila,int columna){
 
 	CELDA c = cuadricula[fila][columna];
@@ -144,9 +153,42 @@ int esPista(int fila,int columna){
 	}
 
 }
+
+int actualizarErrores(int *vacios){
+	int errores= 0;
+	*vacios = 0;
+
+	int i;
+	for (i = 0; i<9; i++ ){
+		int j ;
+		for (j=0; j<9;j++){
+			uint8_t valor = celda_leerValor(cuadricula[i][j]);
+			//Quitamos bit de error siempre, si es necesario se activa a continuación
+			cuadricula[i][j] = cuadricula[i][j] & 0xBFFF;
+
+			if (valor != 0){
+				//Cálculo del bit de error
+				uint16_t propa = 1<<(valor+3);
+				CELDA x = cuadricula[i][j] & 0xFFF0;
+				if ((x & propa) == 0 ){
+					//no podia ser ese valor un candidato, hay que activar el bit de error
+					cuadricula[i][j] = (cuadricula[i][j] | 0x4000);
+					errores = errores+ 1; //Ha activado bit de error
+				}
+
+			}else{
+				*vacios = *vacios + 1;
+			}
+
+		}
+	}
+
+	return errores;
+}
+
 //MAQUINA DE ESTADOS
 void maquinaEstadosSudoku(){
-
+	touchPulsado=0;
 
 	while(1){
 
@@ -154,20 +196,54 @@ void maquinaEstadosSudoku(){
 		switch (estado){
 			case PRE_INICIO: //Pintar instrucciones y esperar a que pulse la pantalla con touch
 					//si a pulsado el touch saltar a inicio
+
 					if (touchPulsado!=0){
 						touchPulsado = 0;
 						//action en este estado
 						//Siguiente estado
-						estado= INICIO;
+						estado= MOSTRAR_NUMEROS_1_3;
+						estadoPintar= PINTAR_SELECCION;
+
+						pintarTodo=1;
+						unaVez = 0;
+					}
+					break;
+			case MOSTRAR_NUMEROS_1_3:
+				D8Led_symbol(numeroAmostrar);
+					if (botonPulsado==BOTONIZQUIERDO){ //Aumenta número
+						botonPulsado = 0;
+						numeroAmostrar ++;
+						if (numeroAmostrar >3){
+							numeroAmostrar=1;
+						}
+
+					}
+					if (botonPulsado==BOTONDERECHO){ //Confirma número
+						botonPulsado = 0;
+
+						if ( numeroAmostrar == 1 ){
+							cuadricula_copiar(cuadricula,cuadricula1);
+						}else if (numeroAmostrar == 2){
+							cuadricula_copiar(cuadricula,cuadricula2);
+						}else{
+							cuadricula_copiar(cuadricula,cuadricula3);
+						}
+						casillasVacias = sudoku_candidatos_init_arm_thumb(cuadricula);
+						numeroAmostrar = 1;
+
+						//Siguiente estado
+						estado= APARECER_F;
 						permitirPulsacionLarga = 0;
 						estadoPintar= PINTAR_NORMAL;
 						empezarTiempo = 1;
+						pintarTodo=1;
+
 					}
 					break;
 			case INICIO: //Estado inicial, pulsar boton izq para ir al siguiente estado
 					if (botonPulsado!=0){
 						botonPulsado = 0;
-						sudoku_candidatos_init_arm_thumb(cuadricula);
+
 						estado = APARECER_F;
 						permitirPulsacionLarga = 0;
 
@@ -214,10 +290,15 @@ void maquinaEstadosSudoku(){
 									botonPulsado = 0;
 									filaConfirmada = numeroAmostrar -1;
 									if (numeroAmostrar == 10){
+										// Ha introducido fila A para acabar
 										numeroAmostrar = 1;
-										estado = APARECER_C;
-										permitirPulsacionLarga = 0;
+										estado = FIN_ESTADISTICAS;
+										estadoPintar= PINTAR_FIN;
+										pintarTodo=1;
+										empezarTiempo = 0;
+										unaVez = 0;
 									}else{
+
 										numeroAmostrar = 1;
 										estado = APARECER_C;
 										permitirPulsacionLarga = 0;
@@ -247,6 +328,7 @@ void maquinaEstadosSudoku(){
 					botonPulsado = 0;
 					columnaConfirmada = numeroAmostrar - 1;
 					numeroAmostrar = 1;
+					pausaCalculo=0;
 					if (esPista(filaConfirmada,columnaConfirmada)==0){ //Si es pista vuelve al inicio
 						estado = APARECER_F;
 						permitirPulsacionLarga = 0;
@@ -254,7 +336,7 @@ void maquinaEstadosSudoku(){
 						estado = APARECER_V;
 						permitirPulsacionLarga = 0;
 					}
-
+					pausaCalculo=1;
 				}
 				break;
 			case APARECER_V: //Comienza elección del valor de la casilla
@@ -279,38 +361,69 @@ void maquinaEstadosSudoku(){
 					botonPulsado = 0;
 					valorConfirmado = numeroAmostrar;
 					numeroAmostrar = 1;
-					int hayError= 0;
+					//int hayError= 0;
+					pausaCalculo=0;
 					if (valorConfirmado == 0){	//Borrado de esa celda
 						borrarValorEn(filaConfirmada,columnaConfirmada);
 					}else{ 						//Introducir ese valor
-						hayError = introducirValorEn(filaConfirmada,columnaConfirmada,valorConfirmado);
+						introducirValorEn(filaConfirmada,columnaConfirmada,valorConfirmado);
 					}
+					pausaCalculo=1;
 
-					if (hayError==0){
-						if(casillasVacias !=0){
-							estado = APARECER_F;	//Vuelve al inicio
-						}else{
-							//Si ya no hay mas casillas vacias, ha terminado
-							estado = FIN_ESTADISTICAS;
-							estadoPintar= PINTAR_FIN;
-						}
+					int errores =0, vacios = 0;
 
-						permitirPulsacionLarga = 0;
+					pausaCalculo=0;
+					errores = actualizarErrores(&vacios);
+					pausaCalculo=1;
+
+					//Esquema para terminar partida
+					if(vacios !=0){
+						//Aun faltan celdas por rellenar, el usuario aun no ha terminado la partida
+						estado = APARECER_F;	//Vuelve al inicio
 
 					}else{
-						estado = APARECER_V;
-						permitirPulsacionLarga = 0;
+						//Ya no quedan celdas vacias, el usuario terminara si no hay errores
+						if (errores >0){
+							estado = APARECER_F;	//Vuelve al inicio
+						}else{
+							estado = FIN_ESTADISTICAS;
+							estadoPintar= PINTAR_FIN;
+							pintarTodo=1;
+							empezarTiempo = 0;
+							unaVez = 0;
+							numeroAmostrar = 1;
+							//
+
+						}
+
 					}
+
+
+
+
+					pintarTodo=1;
 				}
 				break;
 			case FIN_ESTADISTICAS:
+				D8Led_symbol(blank);
+
 				if (touchPulsado!=0){
+
 					touchPulsado = 0;
 					//action en este estado
+					//codigo para reiniciar el sudoku
+
+					decimasSegundos = 0;
+					segundos = 0;
+					dosdecimilisegundosCalculo = 0;
+					segundosCalculo=0;
 					//Siguiente estado
-					estado= INICIO;
-					permitirPulsacionLarga = 0;
-					estadoPintar= PINTAR_NORMAL;
+					estado= MOSTRAR_NUMEROS_1_3;
+					estadoPintar= PINTAR_SELECCION;
+
+					pintarTodo=1;
+					unaVez = 0;
+
 				}
 				break;
 		}//fin switch
@@ -321,7 +434,7 @@ void maquinaEstadosSudoku(){
 
 		if (touchPulsado!=0){
 			touchPulsado=0;
-
+			rebotesTouch=1;
 
 			if (modoZoom==1){
 				modoZoom=0;
@@ -346,6 +459,9 @@ void maquinaEstadosSudoku(){
 			case PINTAR_FIN:
 				pintarFinal();
 				break;
+			case PINTAR_SELECCION:
+				pintarSel();
+				break;
 		}
 
 	}//fin while
@@ -365,11 +481,25 @@ void maquinaEstadosSudoku(){
  */
 
 void pintarPre(){
-
-	Lcd_Clr();
-	Lcd_Active_Clr();
-	Lcd_DspAscII8x16(100,25,BLACK,"Toque la pantalla para jugar");
-	Lcd_Dma_Trans();
+	if (unaVez==0){
+		Lcd_Clr();
+		Lcd_Active_Clr();
+		Lcd_DspAscII8x16(100,25,BLACK,"Toque la pantalla para jugar");
+		Lcd_Dma_Trans();
+		unaVez=1;
+	}
+}
+void pintarSel(){
+	if (unaVez==0){
+		Lcd_Clr();
+		Lcd_Active_Clr();
+		Lcd_DspAscII8x16(5,55,BLACK,"SELECCIONE UN SODOKU CON LOS PULSADORES");
+		Lcd_DspAscII8x16(100,85,BLACK,"1) Sudoku 1");
+		Lcd_DspAscII8x16(100,115,BLACK,"2) Sudoku 1 casi terminado");
+		Lcd_DspAscII8x16(100,145,BLACK,"3) Sudoku 2");
+		Lcd_Dma_Trans();
+		unaVez=1;
+	}
 }
 void pintarNormal(){
 	if (pintarTodo==1){
@@ -385,31 +515,47 @@ void pintarNormal(){
 		//Pintar "cálculos"
 		pintarCalculos();
 	}
-	if (pintarTodo==1)pintarTodo=0;
+
 	//pintar leyenda "Introduzca Fila A para acabar la partida"
 	pintarLeyenda();
 	//si hay zoom
 	//modoZoom =1;
+	if (pintarTodo==1)
 	if (modoZoom==1){
 		//Region numerada
 		pintarRegion();
+
 		//pintar celdas region diferenciando pistas de valores del usuario
 		pintarValoresRegion();
 		//pintar celdas vacias region con listas de candidatos
 		//resaltar error region
 		pintarCandidatosRegion();
+
 	}else{
 	//sino
 
-		//tablero numerado
-		pintarTablero();
+
 		//pintar celdas diferenciando pistas de valores del usuario
 		pintarValores();
 		//pintar celdas vacias con listas de candidatos
 		//resaltar error tablero
 		pintarCandidatos();
+
+		//tablero numerado
+		pintarTablero();
 	}
 	Lcd_Dma_Trans();
+	if (modoZoom!=1){
+		char v[2];
+		v[0]= '2';
+		v[1]= '\0';
+		Lcd_DspAscII8x16(regStartX[0]-17,regStartY[0]+25,BLACK,v);
+		v[0]= '3';
+		Lcd_DspAscII8x16(regStartX[0]-17,regStartY[0]+25*2,BLACK,v);
+		Lcd_Dma_Trans();
+	}
+
+	if (pintarTodo==1)pintarTodo=0;
 }
 
 //apartir de los valores pulsados obtenemos que region es
@@ -424,12 +570,22 @@ int calcularRegion(){
 
 	//0		1   	2     	3
 	//80    140     198		267
-
+	//179					502
+	//
 	//0		1			2			3
 	//710   685-673  	620-621		550 504
-	int v0=80,v1=140,v2=198,v3=257; // Separaciones verticales
+	//671							200
+	int xi=179;
+	int xf=502;
+	int yi=671;
+	int yf=200;
 
-	int h0=710,h1=673,h2=620,h3=504;
+	int dx= (xf -xi)/3;
+	int dy= (yi -yf)/3;
+
+	int v0=xi,v1=xi+dx,v2=xf-dx,v3=xf; // Separaciones verticales
+
+	int h0=yi ,h1=yi-dy,h2=yf+dy,h3=yf;
 
 	if (v0 <= tX && tX < v1 && h1 < tY && tY <= h0){
 		regX=0;regY=0;
@@ -463,16 +619,52 @@ int calcularRegion(){
 }
 
 void pintarFinal(){
-	Lcd_Clr();
-	Lcd_Active_Clr();
-	// Pintar resultado
-	// pintar leyenda "Toque la pantalla para jugar"
-	Lcd_DspAscII8x16(50,60, BLACK, "Tiempo total:");
-	Lcd_DspAscII8x16(274,60,BLACK, itoa(decimasSegundos));
-	Lcd_DspAscII8x16(50,80, BLACK, "Calculos");
-	Lcd_DspAscII8x16(274,80,BLACK, itoa(dosdecimilisegundosCalculo*2));
-	Lcd_DspAscII8x16(240,1, BLACK, "Toque la pantalla para jugar");
-	Lcd_Dma_Trans();
+	if (unaVez==0){
+
+
+		Lcd_Clr();
+		Lcd_Active_Clr();
+		// Pintar resultado
+		// pintar leyenda "Toque la pantalla para jugar"
+
+
+
+
+		char str[10];
+		strcpy(str,"");
+		strcat(str,  itoa(segundos));
+		strcat(str, ",");
+		strcat(str, itoa(decimasSegundos));
+		str[9]='\0';
+		Lcd_DspAscII8x16(50,60, BLACK, "Tiempo total:");
+		Lcd_DspAscII8x16(204,60,BLACK, str);
+		Lcd_DspAscII8x16(50,80, BLACK, "Calculos");
+		Lcd_DspAscII8x16(50,100, BLACK, "Casillas vacias:");
+		//precision  de (0,0000 segundos) cuatro decimales; se multipla para obtener el resultado correcto
+		int deci= dosdecimilisegundosCalculo*2;
+		strcpy(str,"");
+		strcat(str,  itoa(segundosCalculo));
+
+		if (deci <10){
+			strcat(str, ",000");
+		}else if (deci<100){
+			strcat(str, ",00");
+		}else if (deci<1000){
+			strcat(str, ",0");
+		}else{
+			strcat(str, ",");
+		}
+		strcat(str, itoa(dosdecimilisegundosCalculo*2));
+		strcat(str,"\0");
+		Lcd_DspAscII8x16(204,80,BLACK, str);
+		strcpy(str,"");
+		strcat(str,  itoa(casillasVacias));
+		Lcd_DspAscII8x16(204,100,BLACK, str);
+
+		Lcd_DspAscII8x16(50,10, BLACK, "Toque la pantalla para jugar");
+		Lcd_Dma_Trans();
+		unaVez=1;
+	}
 }
 
 
@@ -494,6 +686,7 @@ void pintarCalculos(){
 	Lcd_DspAscII8x16(textColum,51, BLACK, "Calculos");
 	//precision  de (0,0000 segundos) cuatro decimales; se multipla para obtener el resultado correcto
 	int deci= dosdecimilisegundosCalculo*2;
+	LcdClrRect(textColum,68,textColum+70,68+16,WHITE);
 	char str[10];
 	strcpy(str,"");
 	strcat(str,  itoa(segundosCalculo));
@@ -510,6 +703,9 @@ void pintarCalculos(){
 	strcat(str, itoa(dosdecimilisegundosCalculo*2));
 	strcat(str,"\0");
 	Lcd_DspAscII8x16(textColum,68,BLACK, str);
+	strcpy(str,"");
+	strcat(str,  itoa(casillasVacias));
+	Lcd_DspAscII8x16(textColum+30,210,BLACK, str);
 }
 void pintarLeyenda(){
 	Lcd_DspAscII8x16(textColum,102, BLACK, "Ponga");
@@ -518,6 +714,7 @@ void pintarLeyenda(){
 	Lcd_DspAscII8x16(textColum,153, BLACK, "acabar ");
 	Lcd_DspAscII8x16(textColum,170, BLACK, "la ");
 	Lcd_DspAscII8x16(textColum,187, BLACK, "partida");
+	Lcd_DspAscII8x16(textColum,210, BLACK, "V: ");
 }
 
 void pintarNumero24x48(int x,int y,int num,char color){
@@ -639,21 +836,31 @@ void pintarValoresRegion(){
 					v[0] += valor;
 					v[1]='\0';
 					//Lcd_DspAscII8x16(regStartX[j], regStartY[i], DARKGRAY, v);
-					pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,DARKGRAY);
+
+					if (esError(cuadricula[i+regX*3][j+regY*3])!=0) {
+						LcdClrRect(regStartX[j], regStartY[i],regStartX[j]+70, regStartY[i]+70,DARKGRAY);
+						pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,WHITE);
+					}else{
+						pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,DARKGRAY);
+					}
 					break;
 				case 1:
 					v[0] = '0';
 					v[0] += valor;
 					v[1]='\0';
 					//Lcd_DspAscII8x16(regStartX[j], regStartY[i], BLACK, v);
-					pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,BLACK);
+					if (esError(cuadricula[i+regX*3][j+regY*3])!=0) {
+						LcdClrRect(regStartX[j], regStartY[i],regStartX[j]+70, regStartY[i]+70,BLACK);
+						pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,WHITE);
+					}else{
+						pintarNumero24x48(regStartX[j]+25, regStartY[i]+15,valor,BLACK);
+					}
+
 					break;
 				default:
 					break;
 				}
-				if (esError(cuadricula[i+regX*3][j+regY*3])==TRUE) {
-					Lcd_Draw_Box(28+(j-1)*20, 58+(i-1)*20, 15+28+(j-1)*20, 15+58+(i-1)*20, BLACK);
-				}
+
 			}
 		}
 	}
@@ -687,6 +894,7 @@ void pintarCandidatosRegion(){
 //PINTAR TAblero
 
 void pintarTablero(){
+
 	int i;
 	for (i=0; i<9; i++) {
 		//pintar numeros borde
@@ -707,6 +915,8 @@ void pintarTablero(){
 			Lcd_Draw_VLine(regStartY[0],regStartY[3],regStartX[0]+i*25,BLACK,1);
 		}
 
+
+
 	}
 	Lcd_Draw_HLine(regStartX[0],regStartX[3],regStartY[3]-1,BLACK,2);
 	Lcd_Draw_VLine(regStartY[0],regStartY[3],regStartX[3],BLACK,2);
@@ -725,19 +935,34 @@ void pintarValores(){
 					v[0] = '0';
 					v[0] += valor;
 					v[1]='\0';
-					Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), DARKGRAY, v);
+					if (esError(cuadricula[i][j])!=0) {
+						LcdClrRect(regStartX[j/3]+8+25*(j%3)-8, regStartY[i/3]+8+25*(i%3)-8,regStartX[j/3]+8+25*(j%3)+15, regStartY[i/3]+8+25*(i%3)+15,DARKGRAY);
+						Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), WHITE, v);
+					}else{
+						Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), DARKGRAY, v);
+					}
+
 					break;
 				case 1:
 					v[0] = '0';
 					v[0] += valor;
 					v[1]='\0';
-					Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), BLACK, v);
+					if (esError(cuadricula[i][j])!=0) {
+						LcdClrRect(regStartX[j/3]+8+25*(j%3)-8, regStartY[i/3]+8+25*(i%3)-8,regStartX[j/3]+8+25*(j%3)+15, regStartY[i/3]+8+25*(i%3)+15,BLACK);
+						Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), WHITE, v);
+					}else{
+						Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), BLACK, v);
+					}
+
 					break;
 				default:
 					break;
 				}
-				if (esError(cuadricula[i][j])==TRUE) {
-					Lcd_Draw_Box(regStartX[j/3]+25*(j%3), regStartY[i/3]+25*(i%3), regStartX[(1+j)/3]+25*((1+j)%3), regStartY[(i+1)/3]+25*((i+1)%3), BLACK);
+
+			}else{
+				if (esError(cuadricula[i][j])!=0) {
+					LcdClrRect(regStartX[j/3]+8+25*(j%3)-8, regStartY[i/3]+8+25*(i%3)-8,regStartX[j/3]+8+25*(j%3)+15, regStartY[i/3]+8+25*(i%3)+15,BLACK);
+					Lcd_DspAscII8x16(regStartX[j/3]+8+25*(j%3), regStartY[i/3]+8+25*(i%3), WHITE, "0");
 				}
 			}
 		}
