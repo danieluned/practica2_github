@@ -12,7 +12,7 @@
 #include "pintarSudoku.h"
 
 enum {
-	//ESTADOS LÓGICA JUEGO
+	//ESTADOS Lï¿½GICA JUEGO
     INICIO      					= 0,
     APARECER_F						= 1,
     ESPERANDO_IZQUIERDO    			= 2,
@@ -68,7 +68,7 @@ volatile int empezarTiempo = 0;
 //Para saber si ha terminado
 volatile int casillasVacias = -1;
 volatile int rebotesTouch=0;
-
+volatile int microSegundos=0;
 //CONSTANTES
 volatile int BOTONIZQUIERDO = 4;
 volatile int BOTONDERECHO = 8;
@@ -79,7 +79,7 @@ static inline int
 celda_ponerValor(CELDA *celdaptr, uint8_t val)
 {
 
-	//Quitamos bit de error siempre, si es necesario se activa a continuación
+	//Quitamos bit de error siempre, si es necesario se activa a continuaciï¿½n
     *celdaptr = (*celdaptr & 0xFFF0) | (val & 0x000F);
     return 0;
 }
@@ -96,18 +96,27 @@ int esError(CELDA celda){
 }
 void borrarValorEn(uint8_t fila,uint8_t columna){
 	celda_ponerValor(&cuadricula[fila][columna],0);
+	int aux = timer2_leer();
 	casillasVacias = sudoku_candidatos_init_arm_thumb(cuadricula);
+	int fin = timer2_leer();
+	microSegundos += (fin-aux);
 }
-//Devuelve 1 si hay error (no está en candidatos), 0 si no hay error
+//Devuelve 1 si hay error (no estï¿½ en candidatos), 0 si no hay error
 int introducirValorEn(uint8_t fila,uint8_t columna,uint8_t valor){
 	int hayError = 0; //nohay error = 0, error si = 1;
 	if (celda_leerValor(cuadricula[fila][columna]) != 0){
 		hayError= celda_ponerValor(&cuadricula[fila][columna],valor);
+		int aux = timer2_leer();
 		casillasVacias = sudoku_candidatos_init_arm_thumb(cuadricula);
+		int fin = timer2_leer();
+		microSegundos += (fin-aux);
 	}else{
 		hayError = celda_ponerValor(&cuadricula[fila][columna],valor);
 		casillasVacias = casillasVacias - 1;
+		int aux = timer2_leer();
 		sudoku_candidatos_propagar_thumb(cuadricula,fila,columna);
+		int fin = timer2_leer();
+		microSegundos += (fin-aux);
 
 
 	}
@@ -151,11 +160,11 @@ int actualizarErrores(int *vacios){
 		int j ;
 		for (j=0; j<9;j++){
 			uint8_t valor = celda_leerValor(cuadricula[i][j]);
-			//Quitamos bit de error siempre, si es necesario se activa a continuación
+			//Quitamos bit de error siempre, si es necesario se activa a continuaciï¿½n
 			cuadricula[i][j] = cuadricula[i][j] & 0xBFFF;
 
 			if (valor != 0){
-				//Cálculo del bit de error
+				//Cï¿½lculo del bit de error
 				uint16_t propa = 1<<(valor+3);
 				CELDA x = cuadricula[i][j] & 0xFFF0;
 				if ((x & propa) == 0 ){
@@ -198,7 +207,7 @@ void maquinaEstadosSudoku(){
 					break;
 			case MOSTRAR_NUMEROS_1_3:
 				D8Led_symbol(numeroAmostrar);
-					if (botonPulsado==BOTONIZQUIERDO){ //Aumenta número
+					if (botonPulsado==BOTONIZQUIERDO){ //Aumenta nï¿½mero
 						botonPulsado = 0;
 						numeroAmostrar ++;
 						if (numeroAmostrar >3){
@@ -206,7 +215,7 @@ void maquinaEstadosSudoku(){
 						}
 
 					}
-					if (botonPulsado==BOTONDERECHO){ //Confirma número
+					if (botonPulsado==BOTONDERECHO){ //Confirma nï¿½mero
 						botonPulsado = 0;
 
 						if ( numeroAmostrar == 1 ){
@@ -238,7 +247,7 @@ void maquinaEstadosSudoku(){
 
 					}
 					break;
-			case APARECER_F: //Comienza introducción de fila, pulsar izq
+			case APARECER_F: //Comienza introducciï¿½n de fila, pulsar izq
 					D8Led_symbol(15);
 					if (botonPulsado==BOTONIZQUIERDO ){
 						botonPulsado = 0;
@@ -246,9 +255,9 @@ void maquinaEstadosSudoku(){
 						permitirPulsacionLarga = 1;
 					}
 					break;
-			case MOSTRAR_NUMEROS_1_9_F: //Elección de fila
+			case MOSTRAR_NUMEROS_1_9_F: //Elecciï¿½n de fila
 					D8Led_symbol(numeroAmostrar);
-					if (botonPulsado==BOTONIZQUIERDO){ //Aumenta número
+					if (botonPulsado==BOTONIZQUIERDO){ //Aumenta nï¿½mero
 						botonPulsado = 0;
 						numeroAmostrar ++;
 						if (numeroAmostrar >9){
@@ -256,7 +265,7 @@ void maquinaEstadosSudoku(){
 						}
 
 					}
-					if (botonPulsado==BOTONDERECHO){ //Confirma número
+					if (botonPulsado==BOTONDERECHO){ //Confirma nï¿½mero
 						botonPulsado = 0;
 						filaConfirmada = numeroAmostrar -1;
 						numeroAmostrar = 1;
@@ -264,37 +273,37 @@ void maquinaEstadosSudoku(){
 						permitirPulsacionLarga = 0;
 					}
 					break;
-			case MOSTRAR_NUMEROS_1_9_F_A: //Elección de fila
-								D8Led_symbol(numeroAmostrar);
-								if (botonPulsado==BOTONIZQUIERDO){ //Aumenta número
-									botonPulsado = 0;
-									numeroAmostrar ++;
-									if (numeroAmostrar >10){
-										numeroAmostrar=1;
-									}
+			case MOSTRAR_NUMEROS_1_9_F_A: //Elecciï¿½n de fila
+					D8Led_symbol(numeroAmostrar);
+					if (botonPulsado==BOTONIZQUIERDO){ //Aumenta nï¿½mero
+						botonPulsado = 0;
+						numeroAmostrar ++;
+						if (numeroAmostrar >10){
+							numeroAmostrar=1;
+						}
 
-								}
-								if (botonPulsado==BOTONDERECHO){ //Confirma número
-									botonPulsado = 0;
-									filaConfirmada = numeroAmostrar -1;
-									if (numeroAmostrar == 10){
-										// Ha introducido fila A para acabar
-										numeroAmostrar = 1;
-										estado = FIN_ESTADISTICAS;
-										estadoPintar= PINTAR_FIN;
-										pintarTodo=1;
-										empezarTiempo = 0;
-										unaVez = 0;
-									}else{
+					}
+					if (botonPulsado==BOTONDERECHO){ //Confirma nï¿½mero
+						botonPulsado = 0;
+						filaConfirmada = numeroAmostrar -1;
+						if (numeroAmostrar == 10){
+							// Ha introducido fila A para acabar
+							numeroAmostrar = 1;
+							estado = FIN_ESTADISTICAS;
+							estadoPintar= PINTAR_FIN;
+							pintarTodo=1;
+							empezarTiempo = 0;
+							unaVez = 0;
+						}else{
 
-										numeroAmostrar = 1;
-										estado = APARECER_C;
-										permitirPulsacionLarga = 0;
-									}
+							numeroAmostrar = 1;
+							estado = APARECER_C;
+							permitirPulsacionLarga = 0;
+						}
 
-								}
-								break;
-			case APARECER_C: //Comienza introdución de columna, pulsar izq
+					}
+					break;
+			case APARECER_C: //Comienza introduciï¿½n de columna, pulsar izq
 				D8Led_symbol(12);
 				if (botonPulsado==BOTONIZQUIERDO ){
 					botonPulsado = 0;
@@ -302,9 +311,9 @@ void maquinaEstadosSudoku(){
 					permitirPulsacionLarga = 1;
 				}
 				break;
-			case MOSTRAR_NUMEROS_1_9_C: //Elección de columnaa
+			case MOSTRAR_NUMEROS_1_9_C: //Elecciï¿½n de columnaa
 				D8Led_symbol(numeroAmostrar);
-				if (botonPulsado==BOTONIZQUIERDO){ //Aumentar número
+				if (botonPulsado==BOTONIZQUIERDO){ //Aumentar nï¿½mero
 					botonPulsado = 0;
 					numeroAmostrar ++;
 					if (numeroAmostrar >9){
@@ -312,11 +321,11 @@ void maquinaEstadosSudoku(){
 					}
 
 				}
-				if (botonPulsado==BOTONDERECHO){ //Confirma número
+				if (botonPulsado==BOTONDERECHO){ //Confirma nï¿½mero
 					botonPulsado = 0;
 					columnaConfirmada = numeroAmostrar - 1;
 					numeroAmostrar = 1;
-					pausaCalculo=0;
+
 					if (esPista(filaConfirmada,columnaConfirmada)==0){ //Si es pista vuelve al inicio
 						estado = APARECER_F;
 						permitirPulsacionLarga = 0;
@@ -324,10 +333,10 @@ void maquinaEstadosSudoku(){
 						estado = APARECER_V;
 						permitirPulsacionLarga = 0;
 					}
-					pausaCalculo=1;
+
 				}
 				break;
-			case APARECER_V: //Comienza elección del valor de la casilla
+			case APARECER_V: //Comienza elecciï¿½n del valor de la casilla
 				D8Led_symbol(10);
 				if (botonPulsado==BOTONIZQUIERDO ){
 					botonPulsado = 0;
@@ -335,9 +344,9 @@ void maquinaEstadosSudoku(){
 					permitirPulsacionLarga = 1;
 				}
 				break;
-			case MOSTRAR_NUMEROS_0_9_V: //Elección de valor
+			case MOSTRAR_NUMEROS_0_9_V: //Elecciï¿½n de valor
 				D8Led_symbol(numeroAmostrar);
-				if (botonPulsado==BOTONIZQUIERDO){ //Aumenta número
+				if (botonPulsado==BOTONIZQUIERDO){ //Aumenta nï¿½mero
 					botonPulsado = 0;
 					numeroAmostrar ++;
 					if (numeroAmostrar >9){
@@ -345,24 +354,24 @@ void maquinaEstadosSudoku(){
 					}
 
 				}
-				if (botonPulsado==BOTONDERECHO){ //Confirma número
+				if (botonPulsado==BOTONDERECHO){ //Confirma nï¿½mero
 					botonPulsado = 0;
 					valorConfirmado = numeroAmostrar;
 					numeroAmostrar = 1;
 					//int hayError= 0;
-					pausaCalculo=0;
+					//int aux = timer2_leer();
 					if (valorConfirmado == 0){	//Borrado de esa celda
 						borrarValorEn(filaConfirmada,columnaConfirmada);
 					}else{ 						//Introducir ese valor
 						introducirValorEn(filaConfirmada,columnaConfirmada,valorConfirmado);
 					}
-					pausaCalculo=1;
+
 
 					int errores =0, vacios = 0;
 
-					pausaCalculo=0;
+
 					errores = actualizarErrores(&vacios);
-					pausaCalculo=1;
+
 
 					//Esquema para terminar partida
 					if(vacios !=0){
@@ -408,7 +417,7 @@ void maquinaEstadosSudoku(){
 					//Siguiente estado
 					estado= MOSTRAR_NUMEROS_1_3;
 					estadoPintar= PINTAR_SELECCION;
-
+					microSegundos=0;
 					pintarTodo=1;
 					unaVez = 0;
 

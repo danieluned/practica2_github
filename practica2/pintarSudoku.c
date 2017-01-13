@@ -75,7 +75,7 @@ void pintarNormal(){
 	if (pintar==1 || pintarTodo==1){
 		pintar=0;
 		pintarTiempoTotal();
-		//Pintar "cálculos"
+		//Pintar "cï¿½lculos"
 		pintarCalculos();
 	}
 
@@ -252,18 +252,7 @@ void pintarCalculos(){
 	LcdClrRect(textColum,68,textColum+70,68+16,WHITE);
 	char str[10];
 	strcpy(str,"");
-	strcat(str,  itoa(segundosCalculo));
-
-	if (deci <10){
-		strcat(str, ",000");
-	}else if (deci<100){
-		strcat(str, ",00");
-	}else if (deci<1000){
-		strcat(str, ",0");
-	}else{
-		strcat(str, ",");
-	}
-	strcat(str, itoa(dosdecimilisegundosCalculo*2));
+	strcat(str,  itoa(microSegundos));
 	strcat(str,"\0");
 	Lcd_DspAscII8x16(textColum,68,BLACK, str);
 	strcpy(str,"");

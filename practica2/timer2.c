@@ -17,11 +17,11 @@ volatile int pruebaTimer2=0;
 
 
 
-extern int segundosCalculo;
+//extern int segundosCalculo;
 extern int segundos;
 extern int decimasSegundos;
-extern int dosdecimilisegundosCalculo;
-extern int pausaCalculo;
+//extern int dosdecimilisegundosCalculo;
+//extern int pausaCalculo;
 extern int pintar;
 extern int empezarTiempo;
 /* declaración de función que es rutina de servicio de interrupción
@@ -47,7 +47,8 @@ void timer2_ISR(void)
 	if(timer2_num_int%50==0){
 		pintar=1;
 	}
-
+	/*
+	// Tiempo de una jugada en concreto en microsegundos
 	if(pausaCalculo!=1){
 		dosdecimilisegundosCalculo++;
 		if (dosdecimilisegundosCalculo*2 > 10000){
@@ -55,7 +56,7 @@ void timer2_ISR(void)
 			dosdecimilisegundosCalculo=0;
 		}
 	}
-
+	*/
 
 	/* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
 	rI_ISPC |= BIT_TIMER2; // BIT_TIMER2 está definido en 44b.h y pone un uno en el bit que correponde al Timer2
@@ -108,7 +109,7 @@ void timer2_empezar(){
  * lee la cuenta actual del temporizador y el número de interrupciones generadas, y
  * devuelve el tiempo transcurrido en microsegundos.
  */
-float timer2_leer(){
+int timer2_leer(){
 
 	// es de 64Mhz, quiere decir 64.000.000 de ciclos por segundo
 	//Ticks totales:

@@ -34,6 +34,6 @@ void timer2_empezar();
  * lee la cuenta actual del temporizador y el número de interrupciones generadas, y
  * devuelve el tiempo transcurrido en microsegundos.
  */
-float timer2_leer();
+int timer2_leer();
 
 #endif /* _TIMER_H_ */

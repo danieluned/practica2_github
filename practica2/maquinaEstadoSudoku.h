@@ -5,7 +5,7 @@
 * Version:
 *********************************************************************************************/
 
-/* guarda para evitar inclusiones múltiples ("include guard") */
+/* guarda para evitar inclusiones mï¿½ltiples ("include guard") */
 #ifndef MAQUINA_H
 #define MAQUINA_H
 #include "sudoku_2016.h"
@@ -58,6 +58,7 @@ volatile int dosdecimilisegundosCalculo;
 volatile int segundosCalculo;
 volatile int pausaCalculo;
 volatile int empezarTiempo;
+volatile int microSegundos;
 //Para saber si ha terminado
 volatile int casillasVacias;
 volatile int rebotesTouch;

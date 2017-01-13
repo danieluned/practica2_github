@@ -38,11 +38,11 @@ void parpadear(int cod){
 /*--- codigo de las funciones ---*/
 void excepciones_ISR(void)
 {
-	uint32_t value;
-
 	// CALCULAR EL TIPO
+	uint32_t value;
 	asm volatile("mrs %0,CPSR" : "=r" (value));
     error = value & 0xf;
+
     //Calculo de la instruccion causante
     //R14 es la de retorno, r14 -4 es la causante
     uint32_t instruccion;
